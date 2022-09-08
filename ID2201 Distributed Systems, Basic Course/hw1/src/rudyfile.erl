@@ -27,8 +27,7 @@ get_file_by_uri(RawUri) ->
       ContentType = get_content_type(FileType),
 
       {ok, Content, Size, ContentType};
-    {error, Reason} ->
-      io:format("Could not find file " ++ Uri ++ ". Reason: ~p~n", [Reason]),
+    {error, Reason} -> % Could not find file
       {error, Reason}
   end.
 

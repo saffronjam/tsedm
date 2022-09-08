@@ -10,7 +10,7 @@
 -author("emil").
 
 %% API
--export([parse_request/1, ok/1, ok_file/3, not_found/0]).
+-export([parse_request/1, ok/1, ok_file/3, not_found/0, get/1]).
 
 
 parse_request(R0) ->

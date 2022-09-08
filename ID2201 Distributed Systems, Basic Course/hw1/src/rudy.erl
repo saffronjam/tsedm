@@ -79,10 +79,17 @@ request(Client) ->
 
 reply({{get, URI, _}, _, _}) ->
   timer:sleep(40),
-  %%fib(30),
+  fib(30),
 
-  %% http:ok("<html><head><title>Rudy</title></head><body>You tried to enter: " ++ URI ++ "</body></html>").
+  IsFileRequest = string:str(URI, ".") /= 0, % Should proooobably do some other regex matching
+  EmptyRequest = string:equal("/", URI),
 
+  if IsFileRequest ; EmptyRequest ->
+    reply_file(URI);
+      true-> http:ok("<html><head><title>Rudy</title></head><body>You tried to enter: " ++ URI ++ "</body></html>")
+  end.
+
+reply_file(URI) ->
   Result = rudyfile:get_file_by_uri(URI),
   case Result of
     {ok, Content, Size, ContentType} ->
@@ -90,8 +97,6 @@ reply({{get, URI, _}, _, _}) ->
     {error, _} ->
       http:not_found()
   end.
-
-
 
 %%  http:ok("<html><head><title>Rudy</title></head><body>You tried to enter: " ++ URI ++ "</body></html>").
 
