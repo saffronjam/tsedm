@@ -35,14 +35,17 @@ update(Node, N, Gateway, Sorted) ->
 table(Gateways, Map) ->
   Nodes = map:all_nodes(Map),
 
-  InitialSorted = lists:foldl(fun (Node, Acc) ->
-      case lists:member(Node, Gateways) of
-        true -> {Node, 0, Node};
-        false -> {Node, inf, undefined}
-      end
-    end, [], Nodes),
+  InitialSorted = lists:keysort(2,
+    lists:foldl(
+      fun(Node, Acc) ->
+        [case lists:member(Node, Gateways) of
+           true -> {Node, 0, Node};
+           false -> {Node, inf, unknown}
+         end | Acc]
 
-  InitialSorted.
+      end, [], Nodes)
+  ),
+  iterate(InitialSorted, Map, []).
 
 
 iterate([], _, Table) ->
