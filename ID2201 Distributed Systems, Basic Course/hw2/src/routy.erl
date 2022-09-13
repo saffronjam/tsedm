@@ -71,7 +71,7 @@ router(Name, N, Hist, Intf, Table, Map) ->
       end;
 
     {route, Name, From, Message} ->
-      io:format("~w: received message ~w ~n", [Name, Message]),
+      prettyprint(Name, From, "REC", Message),
       router(Name, N, Hist, Intf, Table, Map);
 
     {route, To, From, Message} ->
@@ -106,8 +106,8 @@ statusrequest(Pid) ->
   MyPid = self(),
   Pid ! {status, MyPid},
   receive
-    {status, Status} ->
-      prettyprint(Pid, system, "STATUS", Status)
+    {status, {Name, N, Hist, Intf, Table, Map}} ->
+      io:fwrite("[STATUS] (system -> ~w) ~n -N: ~w~n -Hist: ~w~n -Intf: ~w~n -Table: ~w~n -Map: ~w~n ", [Name, N, Hist, Intf, Table, Map])
   end.
 
 prettyprint(Receiver, Sender, Type) ->

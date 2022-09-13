@@ -47,7 +47,7 @@ name(Ref, Intf) ->
   end.
 
 list(Intf) ->
-  Folded = lists:foldl(fun(Interface, Acc) -> [Interface | Acc] end, [], Intf),
+  Folded = lists:foldl(fun({Name, _, _}, Acc) -> [Name | Acc] end, [], Intf),
   Folded.
 
 broadcast(_, []) ->

@@ -42,6 +42,17 @@ route(Node, Table) ->
 table(Gateways, Map) ->
   Nodes = map:all_nodes(Map),
 
+  helpers:print(gateways),
+  helpers:print(Gateways),
+
+  helpers:print(nodes),
+  helpers:print(Nodes),
+
+
+  helpers:print(map),
+  helpers:print(Map),
+
+
   InitialSorted = lists:keysort(2,
     lists:foldl(
       fun(Node, Acc) ->
@@ -53,7 +64,13 @@ table(Gateways, Map) ->
       end, [], Nodes)
   ),
 
-  iterate(InitialSorted, Map, []).
+  helpers:print(intialsorted),
+  helpers:print(InitialSorted),
+
+  Iterated = iterate(InitialSorted, Map, []),
+  helpers:print(iterated),
+  helpers:print(Iterated),
+  Iterated.
 
 
 iterate([], _, Table) ->
@@ -72,9 +89,10 @@ iterate(Sorted, Map, Table) ->
 
     %% If reachable, update the route if hops + 1 (direct link) is better than existing
     Links ->
-      UpdateClosestLinks = fun(Node, Acc) ->
-        update(Node, Hops + 1, Through, Acc)
-                           end,
+      UpdateClosestLinks =
+        fun(Node, Acc) ->
+          update(Node, Hops + 1, Through, Acc)
+        end,
 
       AfterHopsUpdate = lists:foldl(UpdateClosestLinks, Tail, Links),
       iterate(AfterHopsUpdate, Map, [{To, Through} | Table])
