@@ -10,7 +10,7 @@
 -author("emil").
 
 %% API
--export([entry/2, replace/4, update/4, iterate/3, table/2]).
+-export([entry/2, replace/4, update/4, iterate/3, table/2, route/2]).
 
 
 entry(Node, Sorted) ->
@@ -32,6 +32,13 @@ update(Node, N, Gateway, Sorted) ->
     true -> Sorted
   end.
 
+route(Node, Table) ->
+  Result = lists:keyfind(Node, 1, Table),
+  case Result of
+    false -> notfound;
+    {_, Gateway} -> {ok, Gateway}
+  end.
+
 table(Gateways, Map) ->
   Nodes = map:all_nodes(Map),
 
@@ -45,6 +52,7 @@ table(Gateways, Map) ->
 
       end, [], Nodes)
   ),
+
   iterate(InitialSorted, Map, []).
 
 
@@ -57,6 +65,7 @@ iterate([{_, inf, _}], _, Table) ->
 iterate(Sorted, Map, Table) ->
   [{To, Hops, Through} | Tail] = Sorted,
   Reachable = map:reachable(To, Map),
+
   case Reachable of
     %% If not comparable (not reachable), add directly to routing table
     [] -> iterate(Tail, Map, [{To, Through} | Table]);
