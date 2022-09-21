@@ -1,0 +1,37 @@
+c(routy).
+c(dijkstra).
+c(map).
+c(intf).
+c(hist).
+c(helpers).
+
+routy:start(r1, stockholm).
+routy:start(r2, goteborg).
+routy:start(r3, lund).
+routy:start(r4, kiruna).
+
+r1 ! {add, lund, r3}.
+r1 ! {add, kiruna, r4}.
+
+r2 ! {add, lund, r3}.
+r2 ! {add, kiruna, r4}.
+
+r3 ! {add, goteborg, r2}.
+r3 ! {add, stockholm, r1}.
+
+r4 ! {add, stockholm, r1}.
+r4 ! {add, goteborg, r2}.
+
+r1 ! broadcast.
+r2 ! broadcast.
+r3 ! broadcast.
+r4 ! broadcast.
+
+r1 ! update.
+r2 ! update.
+r3 ! update.
+r4 ! update.
+
+r4 ! {send, lund, hellomyfriend}.
+
+

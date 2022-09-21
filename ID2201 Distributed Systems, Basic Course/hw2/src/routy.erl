@@ -80,7 +80,7 @@ router(Name, N, Hist, Intf, Table, Map) ->
         {ok, Gw} ->
           case intf:lookup(Gw, Intf) of
             {ok, Pid} ->
-              Pid ! {route, To, From, Message};
+              Pid ! {route, To, Name, Message};
             notfound ->
               io:fwrite("No Gw pid found. Interfaces: ~w~n", [Intf]),
               ok

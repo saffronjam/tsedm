@@ -12,7 +12,6 @@
 %% API
 -export([entry/2, replace/4, update/4, iterate/3, table/2, route/2]).
 
-
 entry(Node, Sorted) ->
   Result = lists:keyfind(Node, 1, Sorted),
   case Result of
@@ -42,59 +41,36 @@ route(Node, Table) ->
 table(Gateways, Map) ->
   Nodes = map:all_nodes(Map),
 
-  helpers:print(gateways),
-  helpers:print(Gateways),
+  GenerateTable =
+    fun(Node, Acc) ->
+      [case lists:member(Node, Gateways) of
+         true -> {Node, 0, Node};
+         false -> {Node, inf, unknown}
+       end | Acc]
 
-  helpers:print(nodes),
-  helpers:print(Nodes),
+    end,
 
-
-  helpers:print(map),
-  helpers:print(Map),
-
-
-  InitialSorted = lists:keysort(2,
-    lists:foldl(
-      fun(Node, Acc) ->
-        [case lists:member(Node, Gateways) of
-           true -> {Node, 0, Node};
-           false -> {Node, inf, unknown}
-         end | Acc]
-
-      end, [], Nodes)
-  ),
-
-  helpers:print(intialsorted),
-  helpers:print(InitialSorted),
+  Folded = lists:foldl(GenerateTable, [], Nodes),
+  InitialSorted = lists:keysort(2, Folded),
 
   Iterated = iterate(InitialSorted, Map, []),
-  helpers:print(iterated),
-  helpers:print(Iterated),
   Iterated.
 
 
 iterate([], _, Table) ->
   Table;
 
-iterate([{_, inf, _}], _, Table) ->
+iterate([{_, inf, _} | _], _, Table) ->
   Table;
 
-iterate(Sorted, Map, Table) ->
-  [{To, Hops, Through} | Tail] = Sorted,
-  Reachable = map:reachable(To, Map),
+iterate([{Node, Hops, Through} | Sorted], Map, Table) ->
+  UpdateClosestLinks =
+    fun(X, Acc) ->
+      update(X, Hops + 1, Through, Acc)
+    end,
 
-  case Reachable of
-    %% If not comparable (not reachable), add directly to routing table
-    [] -> iterate(Tail, Map, [{To, Through} | Table]);
-
-    %% If reachable, update the route if hops + 1 (direct link) is better than existing
-    Links ->
-      UpdateClosestLinks =
-        fun(Node, Acc) ->
-          update(Node, Hops + 1, Through, Acc)
-        end,
-
-      AfterHopsUpdate = lists:foldl(UpdateClosestLinks, Tail, Links),
-      iterate(AfterHopsUpdate, Map, [{To, Through} | Table])
-  end.
-
+  % For all the reachable connections from this Node,
+  % check if this Node can provide a better path
+  Links = map:reachable(Node, Map),
+  AfterHopsUpdate = lists:foldl(UpdateClosestLinks, Sorted, Links),
+  iterate(AfterHopsUpdate, Map, [{Node, Through} | Table]).
