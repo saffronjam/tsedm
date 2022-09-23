@@ -28,7 +28,7 @@ reachable(Node, Map) ->
     {_, Links} -> Links
   end.
 
+
 all_nodes(Map) ->
   Collected = lists:foldl(fun({From, Links}, Acc) -> Acc ++ [From | Links] end, [], Map),
-  Set = sets:from_list(Collected),
-  lists:usort(sets:to_list(Set)).
+  lists:usort(Collected).
