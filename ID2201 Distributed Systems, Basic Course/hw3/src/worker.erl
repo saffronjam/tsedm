@@ -36,7 +36,7 @@ loop(Name, Log, Peers, Sleep, Jitter, Time) ->
     {msg, IncomingTime, Msg} ->
       Newest = time:merge(Time, IncomingTime),
       IncreasedTime = time:inc(Name, Newest),
-      Log ! {log, Name, Newest, {received, Msg}},
+      Log ! {log, Name, IncreasedTime, {received, Msg}},
       loop(Name, Log, Peers, Sleep, Jitter, IncreasedTime);
     stop ->
       ok;
@@ -47,18 +47,18 @@ loop(Name, Log, Peers, Sleep, Jitter, Time) ->
     Selected = select(Peers),
     Message = {hello, random:uniform(100)},
 
-    IncresedTime = time:inc(Name, Time),
+    IncreasedTime = time:inc(Name, Time),
 
     %% Send
-    Selected ! {msg, IncresedTime, Message},
+    Selected ! {msg, IncreasedTime, Message},
 
     jitter(Jitter),
 
     %% Log
-    Log ! {log, Name, IncresedTime, {sending, Message}},
+    Log ! {log, Name, IncreasedTime, {sending, Message}},
 
-    loop(Name, Log, Peers, Sleep, Jitter, IncresedTime)
-  end.
+    loop(Name, Log, Peers, Sleep, Jitter, IncreasedTime)
+end.
 
 select(Peers) ->
   lists:nth(random:uniform(length(Peers)), Peers).

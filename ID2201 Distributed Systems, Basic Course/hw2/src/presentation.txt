@@ -1,0 +1,28 @@
+routy:start(r1, kiruna).
+routy:start(r2, gothenburg).
+routy:start(r3, stockholm).
+routy:start(r4, lund).
+
+r1 ! {add, gothenburg, {r2, 'gothenburg@n142-p43'}}.
+r1 ! {add, stockholm, {r3, 'stockholm@n142-p43'}}.
+
+r2 ! {add, kiruna, {r1, 'kiruna@n142-p43'}}.
+r2 ! {add, lund, {r4, 'lund@n142-p43'}}.
+
+r3 ! {add, kiruna, {r1, 'kiruna@n142-p43'}}.
+r3 ! {add, lund, {r4, 'lund@n142-p43'}}.
+
+r4 ! {add, gothenburg, {r2, 'gothenburg@n142-p43'}}.
+r4 ! {add, stockholm, {r3, 'stockholm@n142-p43'}}.
+
+r1 ! broadcast.
+r2 ! broadcast.
+r3 ! broadcast.
+r4 ! broadcast.
+
+r1 ! update.
+r2 ! update.
+r3 ! update.
+r4 ! update.
+
+r1 ! {send, lund, hellomyfriend}.

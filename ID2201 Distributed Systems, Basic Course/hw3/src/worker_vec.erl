@@ -46,18 +46,18 @@ loop(Name, Log, Peers, Sleep, Jitter, Time) ->
     % Message and peer
     Selected = select(Peers),
     Message = {hello, random:uniform(100)},
-
-    IncresedTime = time_vec:inc(Name, Time),
+    
+    IncreasedTime = time_vec:inc(Name, Time),
 
     %% Send
-    Selected ! {msg, IncresedTime, Message},
+    Selected ! {msg, IncreasedTime, Message},
 
     jitter(Jitter),
 
     %% Log
-    Log ! {log, Name, IncresedTime, {sending, Message}},
+    Log ! {log, Name, IncreasedTime, {sending, Message}},
 
-    loop(Name, Log, Peers, Sleep, Jitter, IncresedTime)
+    loop(Name, Log, Peers, Sleep, Jitter, IncreasedTime)
   end.
 
 select(Peers) ->
