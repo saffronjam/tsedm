@@ -2,7 +2,8 @@ c(gui).
 c(test).
 c(worker).
 
-c(gms2).
+c(gms3).
+c(gms3demo).
 
 
 test:more(4, gms3, 1000).

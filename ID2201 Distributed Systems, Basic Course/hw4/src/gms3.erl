@@ -23,7 +23,7 @@ start(Id) ->
 
 init(Id, Rnd, Master) ->
   random:seed(Rnd, Rnd, Rnd),
-  leader(Id, Master, [], [Master]).
+  leader(Id, Master, 0, [], [Master]).
 
 %% Slave
 start(Id, Grp) ->
@@ -36,10 +36,11 @@ init(Id, Rnd, Grp, Master) ->
   Self = self(),
   Grp ! {join, Master, Self},
   receive
-    {view, [Leader | Slaves], Group} ->
+    {view, N, [Leader | Slaves], Group} ->
       Master ! {view, Group},
       erlang:monitor(process, Leader),
-      slave(Id, Master, Leader, Slaves, Group)
+      LastReceived = {view, N, [Leader | Slaves]},
+      slave(Id, Master, Leader, N + 1, LastReceived, Slaves, Group)
   after ?timeout ->
     Master ! {error, "no reply from leader"}
   end.
@@ -61,13 +62,15 @@ leader(Id, Master, N, Slaves, Group) ->
     {mcast, Msg} ->
       bcast(Id, {msg, Msg}, Slaves),
       Master ! Msg,
-      leader(Id, Master, Slaves, Group);
+      % Increment N for next iteration
+      leader(Id, Master, N + 1, Slaves, Group);
     {join, Wrk, Peer} ->
       Slaves2 = lists:append(Slaves, [Peer]),
       Group2 = lists:append(Group, [Wrk]),
-      bcast(Id, {view, [self() | Slaves2], Group2}, Slaves2),
+      bcast(Id, {view, N, [self() | Slaves2], Group2}, Slaves2),
       Master ! {view, Group2},
-      leader(Id, Master, Slaves2, Group2);
+      % Increment N for next iteration
+      leader(Id, Master, N + 1, Slaves2, Group2);
     stop ->
       ok
   end.
@@ -76,19 +79,26 @@ slave(Id, Master, Leader, N, Last, Slaves, Group) ->
   receive
     {'DOWN', _Ref, process, Leader, _Reason} ->
       io:format("Received DOWN from Master, electing new one...~n"),
-      election(Id, Master, Slaves, Group);
+      election(Id, Master, N, Last, Slaves, Group);
     {mcast, Msg} ->
       Leader ! {mcast, Msg},
-      slave(Id, Master, Leader, Slaves, Group);
+      slave(Id, Master, Leader, N, Last, Slaves, Group);
     {join, Wrk, Peer} ->
       Leader ! {join, Wrk, Peer},
-      slave(Id, Master, Leader, Slaves, Group);
+      slave(Id, Master, Leader, N, Last, Slaves, Group);
+  % Throw away old messages
+    {msg, I, _} when I < N ->
+      slave(Id, Master, Leader, N, Last, Slaves, Group);
     {msg, N, Msg} ->
       Master ! Msg,
-      slave(Id, Master, Leader, Slaves, Group);
+      % Increment N for next iteration
+      LastReceived = {msg, N, Msg},
+      slave(Id, Master, Leader, N + 1, LastReceived, Slaves, Group);
     {view, N, [Leader | Slaves2], Group2} ->
       Master ! {view, Group2},
-      slave(Id, Master, Leader, Slaves2, Group2);
+      % Increment N for next iteration
+      LastReceived = {view, N, [Leader | Slaves2]},
+      slave(Id, Master, Leader, N + 1, LastReceived, Slaves2, Group2);
     stop ->
       ok
   end.
@@ -97,10 +107,17 @@ election(Id, Master, N, Last, Slaves, [_ | Group]) ->
   Self = self(),
   case Slaves of
     [Self | Rest] ->
+      % Before electing ourself as a leader,
+      %   send our last message in case it was not received by the others when we crashed
+      %   This works since, if we are elected as leader, we were first in the list
+      %   And we must then have received the "most" messages out of all the nodes
+      % Hopefully one message back is enough...
+      bcast(Id, Last, Rest),
+
       bcast(Id, {view, Slaves, Group}, Rest),
       Master ! {view, Group},
-      leader(Id, Master, N, Rest, Group);
+      leader(Id, Master, N + 1, Rest, Group);
     [Leader | Rest] ->
       erlang:monitor(process, Leader),
-      slave(Id, Master, N, Last, Leader, Rest, Group)
+      slave(Id, Master, N + 1, Last, Leader, Rest, Group)
   end.
