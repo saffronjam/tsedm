@@ -6,12 +6,12 @@
 %%% @end
 %%% Created : 27. Sep 2022 12:47
 %%%-------------------------------------------------------------------
--module(gms3demo).
+-module(gmsbonusdemo).
 -author("emil").
 
 
 -define(sleep, 1000).
--define(module, gms3).
+-define(module, gmsbonus).
 -define(init_pc, {leader, pc1@home}).
 
 %% API

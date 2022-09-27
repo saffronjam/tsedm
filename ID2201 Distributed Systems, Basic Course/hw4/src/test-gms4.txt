@@ -1,0 +1,23 @@
+c(gui).
+c(test).
+c(worker).
+
+c(gms3).
+c(gms3demo).
+
+
+test:more(4, gmsbonus, 1000).
+
+start:
+erl -sname pc1 -setcookie groupy
+gms3demo:start_pc1().
+
+erl -sname pc2 -setcookie groupy
+gms3demo:start_pc2().
+
+erl -sname pc3 -setcookie groupy
+gms3demo:start_pc3().
+
+erl -sname pc4 -setcookie groupy
+gms3demo:start_pc4().
+
