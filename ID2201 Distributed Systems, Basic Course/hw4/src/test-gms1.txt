@@ -1,0 +1,8 @@
+c(gui).
+c(test).
+c(worker).
+
+c(gms1).
+
+
+test:more(4, gms1, 1000).
