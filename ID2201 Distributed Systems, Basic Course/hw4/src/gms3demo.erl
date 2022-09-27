@@ -9,31 +9,26 @@
 -module(gms3demo).
 -author("emil").
 
+
 -define(sleep, 1000).
+-define(module, gms3).
+-define(init_pc, {leader, pc1@home}).
 
 %% API
--export([start_pc1/1, start_pc2/1, start_pc3/1, start_pc4/1, add_node/2]).
+-export([start_pc1/0, start_slave/0, add_node/2]).
 
-start_pc1(Module) ->
+start_pc1() ->
   % Create the leader initially
-%%  Wrk = test:first(1, Module, ?sleep),
-%%
-%%  % Add slave
-%%  test:add(2, Module, Wrk, ?sleep),
-%%
-%%  Wrk.
-  test:more(4, gms3, 1000).
+  Wrk = test:first(1, ?module, ?sleep),
 
+  % Add slave
+  test:add(2, ?module, ?init_pc, ?sleep),
 
-start_pc2(Module) ->
-  test:add(3, Module, '<>@n142-p43', ?sleep).
+  {ok, pc1, Wrk}.
 
-start_pc3(Module) ->
-  test:add(4, Module, '<>@n142-p43', ?sleep).
+start_slave() ->
+  test:add(3, ?module, ?init_pc, ?sleep).
 
-
-start_pc4(Module) ->
-  test:add(5, Module, '<>@n142-p43', ?sleep).
 
 add_node(Pc, Module) ->
   test:add(rand:uniform(1000) + 1000, Pc, Module, ?sleep).
