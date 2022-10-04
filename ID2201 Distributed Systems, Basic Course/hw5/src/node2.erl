@@ -64,13 +64,13 @@ node(Id, Predecessor, Successor, Store) ->
       stabilize(Successor),
       node(Id, Predecessor, Successor, Store);
     probe ->
-      create_probe(Id, Successor),
+      create_probe(Id, Successor, Store),
       node(Id, Predecessor, Successor, Store);
     {probe, Id, Nodes, T} ->
       remove_probe(T, Nodes),
       node(Id, Predecessor, Successor, Store);
     {probe, Ref, Nodes, T} ->
-      forward_probe(Ref, T, Nodes, Id, Successor),
+      forward_probe(Ref, T, Nodes, Id, Successor, Store),
       node(Id, Predecessor, Successor, Store);
     {add, Key, Value, Qref, Client} ->
       UpdatedStore = add(Key, Value, Qref, Client, Id, Predecessor, Successor, Store),
@@ -102,18 +102,21 @@ lookup(Key, Qref, Client, Id, {Pkey, _}, {_, Spid}, Store) ->
       Spid ! {lookup, Key, Qref, Client}
   end.
 
-create_probe(Id, {_, Spid}) ->
+create_probe(Id, {_, Spid}, Store) ->
+  io:format("Node: ~w Store size: ~w ~n", [self(), length(Store)]),
   Spid ! {probe, Id, [Id], erlang:system_time(micro_seconds)}.
 
-forward_probe(Ref, T, Nodes, Id, {_, Spid}) ->
+forward_probe(Ref, T, Nodes, Id, {_, Spid}, Store) ->
+  io:format("Node: ~w Store size: ~w ~n", [self(), length(Store)]),
   Spid ! {probe, Ref, [Id | Nodes], T}.
 
 remove_probe(T, Nodes) ->
   Now = erlang:system_time(micro_seconds),
   Delta = Now - T,
-  printer:msg("-- Probe finished -- ~n"),
+  printer:msg("-- Probe FINISHED --"),
   printer:var("Node count", length(Nodes)),
-  printer:var("Duration (microseconds)", Delta).
+  printer:var("Duration (microseconds)", Delta),
+  printer:msg("").
 
 notify({Nkey, Npid}, Id, Predecessor, Store) ->
   case Predecessor of

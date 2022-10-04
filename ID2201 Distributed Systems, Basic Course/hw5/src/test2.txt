@@ -9,9 +9,11 @@ test:start(node2, 5, Peer).
 
 Peer ! probe.
 
-Keys = test:keys(100).
+Keys = test:keys(25).
 test:add(Keys, Peer).
 test:check(Keys, Peer).
+
+Peer ! probe.
 
 
 

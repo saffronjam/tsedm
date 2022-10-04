@@ -10,13 +10,13 @@ test:start(node3, 5, Peer).
 
 Peer ! probe.
 
-Keys = test:keys(45).
+Keys = test:keys(25).
 test:add(Keys, Peer).
 
 Peer ! probe.
 
 test:check(Keys, Peer).
 
-<0.110.0> ! stop.
+<0.113.0> ! stop.
 
 test:check(Keys, Peer).
