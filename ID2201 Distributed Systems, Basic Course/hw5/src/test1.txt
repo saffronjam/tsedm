@@ -1,0 +1,9 @@
+c(key).
+c(node1).
+c(test).
+c(printer).
+
+
+Peer = test:start(node1).
+test:start(node1, 5, Peer).
+Peer ! probe.

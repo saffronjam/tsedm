@@ -1,0 +1,22 @@
+c(key).
+c(node3).
+c(test).
+c(printer).
+c(storage).
+
+Peer = test:start(node3).
+
+test:start(node3, 5, Peer).
+
+Peer ! probe.
+
+Keys = test:keys(45).
+test:add(Keys, Peer).
+
+Peer ! probe.
+
+test:check(Keys, Peer).
+
+<0.110.0> ! stop.
+
+test:check(Keys, Peer).
