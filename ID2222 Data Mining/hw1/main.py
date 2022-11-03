@@ -1,10 +1,5 @@
 import os
-import numpy as np
 import pandas as pd
-from IPython.display import display
-
-from tabulate import tabulate
-
 from shingle import create_shingles
 
 
@@ -30,10 +25,12 @@ def load_documents(folder):
 def main():
     # Step 0: Load dataset
     documents = load_documents('dataset')
-    print(tabulate(documents, headers='keys', tablefmt='psql'))
+    # print(tabulate(documents, headers='keys', tablefmt='psql'))
 
     # Step 1: shingle
     df = create_shingles(documents)
+
+    print(df)
 
     # Step 2:
     # Step 3:
