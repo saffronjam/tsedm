@@ -1,7 +1,6 @@
 import os
-import pandas as pd
 from shingle import create_shingles
-from jaccard import make_matrix
+from jaccard import make_matrix, print_heatmap
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder \
@@ -61,19 +60,20 @@ def main():
     # doc1  1.0   0.6
     # doc2  0.6
 
+
 # Step 3: MinHashing
-    # A class MinHashing that builds a minHash signature (in the form of a vector or a set)
-    # of a given length n from a given set of integers (a set of hashed shingles).
+# A class MinHashing that builds a minHash signature (in the form of a vector or a set)
+# of a given length n from a given set of integers (a set of hashed shingles).
 
-    # Step 4: CompareSignatures
-    # A class CompareSignatures estimates the similarity of two integer vectors – minhash signatures –
-    # as a fraction of components in which they agree.
+# Step 4: CompareSignatures
+# A class CompareSignatures estimates the similarity of two integer vectors – minhash signatures –
+# as a fraction of components in which they agree.
 
-    # Step 5: LSH
-    # (Optional task for extra 2 bonus points) A class LSH that implements the LSH technique:
-    # given a collection of minhash signatures (integer vectors) and a similarity threshold t,
-    # the LSH class (using banding and hashing) finds candidate pairs of signatures agreeing on at least
-    # a fraction t of their components.
+# Step 5: LSH
+# (Optional task for extra 2 bonus points) A class LSH that implements the LSH technique:
+# given a collection of minhash signatures (integer vectors) and a similarity threshold t,
+# the LSH class (using banding and hashing) finds candidate pairs of signatures agreeing on at least
+# a fraction t of their components.
 
 
 if __name__ == '__main__':

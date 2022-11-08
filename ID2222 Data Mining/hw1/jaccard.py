@@ -1,11 +1,32 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import udf
-from pyspark.sql.types import StructType, FloatType
+import numpy as np
+from matplotlib import pyplot as plt
+
+
+def print_heatmap(table):
+    np_array = np.array(table)
+
+    import seaborn as sns
+
+    fig, (ax1) = plt.subplots(ncols=1, figsize=(12, 6))
+
+    # Chane palette:
+    # https://seaborn.pydata.org/tutorial/color_palettes.html
+    color_palette = sns.color_palette("viridis", as_cmap=True)
+    sns.heatmap(data=np_array,
+                ax=ax1,
+                cmap=color_palette,
+                annot=True,
+                annot_kws={'fontsize': 16, 'fontweight': 'bold'},
+                cbar_kws={'orientation': 'vertical'})
+
+    colorbar = ax1.collections[0].colorbar
+    colorbar.ax.tick_params(labelsize=20, colors='black')
+
+    plt.show()
 
 
 def print_table(table):
-    print('\n'.join(['\t'.join([str(cell) for cell in row]) for row in table]))
-
+    print('\n'.join(['\t'.join(['{:.2f}'.format(cell) for cell in row]) for row in table]))
 
 
 def compare_sets(set1, set2):
@@ -22,12 +43,13 @@ def make_matrix(df):
     collected = df.collect()
 
     result = []
+
     for i in range(df.count()):
-        result.append([i])
+        result.append([])
         for j in range(df.count()):
-            result[i + 1].append(j)
             set1 = set(collected[i].shingles)
             set2 = set(collected[j].shingles)
-            result[i].append("{:.2f}".format(compare_sets(set1, set2)))
+            result[i].append(compare_sets(set1, set2))
 
     print_table(result)
+    print_heatmap(result)
