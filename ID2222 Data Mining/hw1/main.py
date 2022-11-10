@@ -3,7 +3,8 @@ from shingle import create_shingles
 from jaccard import make_matrix
 from pyspark.sql import SparkSession
 from minhash import build_signature
-from signatures import compare_signatures
+from signatures import compare_signatures, compare_signatures_by_pair
+from lsh import create_candidate_pairs
 
 spark = SparkSession.builder \
     .master('local[*]') \
@@ -45,8 +46,8 @@ def main():
     # Step 2: Compare sets
     # A class CompareSets computes the Jaccard similarity of two sets of integers –
     # two sets of hashed shingles.
-    # print("===== Step 2: Compare sets =====")
-    # make_matrix(df)
+    print("===== Step 2: Compare sets =====")
+    make_matrix(characteristic)
 
     # Step 3: MinHashing
     # A class MinHashing that builds a minHash signature (in the form of a vector or a set)
@@ -58,13 +59,17 @@ def main():
     # Step 4: CompareSignatures
     # A class CompareSignatures estimates the similarity of two integer vectors – minhash signatures –
     # as a fraction of components in which they agree.
-    result = compare_signatures(signatures)
+    print("===== Step 4: Compare signatures =====")
+    compare_signatures(signatures)
 
     # Step 5: LSH
     # (Optional task for extra 2 bonus points) A class LSH that implements the LSH technique:
     # given a collection of minhash signatures (integer vectors) and a similarity threshold t,
     # the LSH class (using banding and hashing) finds candidate pairs of signatures agreeing on at least
     # a fraction t of their components.
+    print("===== Step 5: Find candidate pairs (LSH) =====")
+    candidate_pairs = create_candidate_pairs(signatures, 0.4)
+    compare_signatures_by_pair(candidate_pairs, signatures)
 
 
 if __name__ == '__main__':
