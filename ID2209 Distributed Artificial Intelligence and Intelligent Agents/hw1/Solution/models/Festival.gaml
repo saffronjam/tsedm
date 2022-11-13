@@ -51,6 +51,16 @@ species Person skills:[moving]
 	string personName <- "Undefined";
 	point infoCenterPoint <- nil;
 	
+	// Challenge 1: Small brain
+	// Remember the last shop points, and when hungry or thirsty
+	// decide whether to go to the last shop or ask for a new one
+	// However, to easily compare we only add this brain to roughly half the agents
+	point lastRestaurant <- nil;
+	point lastBar <- nil;	
+	bool hasBrain <- flip(0.5);
+	float distanceTraveled <- 0.0;
+	
+	
 	action setName(int num) {
 		personName <- "Person " + num;
 	}
@@ -73,10 +83,24 @@ species Person skills:[moving]
 		draw circle(1) color: agentColor;
 	}
 	
-	reflex lookForInfoCenter when: (hunger > maxHunger or thirst > maxThirst) and targetPoint = nil 
-	{
-		write personName + " going to info center";
-		targetPoint <- infoCenterPoint; // Go to info center
+	// Challenge 1
+	reflex makeStoreDecision when: (hunger > maxHunger or thirst > maxThirst) and targetPoint = nil {
+		bool goToNewStore <- flip(0.1);
+		if (goToNewStore or !hasBrain) {
+			targetPoint <- infoCenterPoint;
+		} else {				
+			if (hunger > maxHunger) {
+				targetPoint <- lastRestaurant;
+			} else {
+				targetPoint <- lastBar;
+			}
+		}
+		
+		if (targetPoint != nil) {
+			distanceTraveled <- distanceTraveled + location distance_to targetPoint;
+			write personName + " travelled " + int(distanceTraveled) + " (" + hasBrain + ") ";
+		}
+		
 	}
 	
 	reflex beIdle when: targetPoint = nil
@@ -91,37 +115,39 @@ species Person skills:[moving]
 		do goto target:targetPoint;
 	}
 	
-	reflex getInfo when: targetPoint != nil 
+	reflex getInfo when: targetPoint != nil 		
 		and location distance_to(targetPoint) < 2 
 		and !empty(InfoCenter at_distance distanceThreshold) {
+		
+		// Info center reached
 		ask InfoCenter at_distance distanceThreshold {
-			write myself.personName + " is at info center";
 			if(myself.thirst > myself.maxThirst){
 				myself.targetPoint <- self.findBar();	
-				write myself.personName + " going to bar at " + myself.targetPoint;
+				myself.lastBar <- myself.targetPoint;
 			}
 			else if(myself.hunger > myself.maxHunger){
 				myself.targetPoint <- self.findRestaurant();
-				write myself.personName + " going to restaurant at " + myself.targetPoint;
+				myself.lastRestaurant <- myself.targetPoint;
 			}
 			else {
 				myself.targetPoint <- nil;
 			}
 		}
+		
 	}
 	
 	reflex enterStore when: targetPoint != nil 
 		and location distance_to(targetPoint) < 2 
 		and !empty(Store at_distance distanceThreshold) {
+			
+		// Store reached 
 		ask Store at_distance distanceThreshold {
 			if (self.hasFood){
 				myself.hunger <- 0;
 				myself.targetPoint <- nil;
-				write myself.personName + " eating at " + self.storeName;
 			} else {
 				myself.thirst <- 0;
 				myself.targetPoint <- nil;
-				write myself.personName + " drinking at " + self.storeName;
 			}
 		}
 	}
@@ -171,19 +197,11 @@ species InfoCenter {
 		location <- pos;
 	}
 	
-	
-	action setName(int s){
-		write "message " + s;
-	}
-	
 	point findBar{
-		write "restaurants " + restaurants + " bars " + bars;	
 		return (1 among bars)[0].location;
 	}
 	
 	point findRestaurant{
-		
-		write "restaurants " + restaurants + " bars " + bars;	
 		return (1 among restaurants)[0].location;
 	}
 	
