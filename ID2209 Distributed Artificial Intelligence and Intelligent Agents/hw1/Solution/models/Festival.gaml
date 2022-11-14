@@ -7,6 +7,7 @@ global {
 	
 	init {
 		create Person number:numberOfPeople;
+		create SecurityGuard number:1;
 		
 		point infoCenterPosition <- {rnd(0, 100), rnd(0, 100)};
 				
@@ -35,7 +36,10 @@ global {
         	
         	infoCenter <- InfoCenter[0];
         	infoCenter <- infoCenter.setPosition(infoCenterPosition);
-        
+        	
+			SecurityGuard securityGuard <- SecurityGuard[0];
+        	infoCenter <- InfoCenter[0];
+        	infoCenter <- infoCenter.setGuard(securityGuard);
         }
 	}
 }
@@ -60,6 +64,9 @@ species Person skills:[moving]
 	bool hasBrain <- flip(0.5);
 	float distanceTraveled <- 0.0;
 	
+	// Challenge 2: Bad actors
+	// Some actors are born to be bad and must therefore be killed
+	bool isBad <- flip(0.5);
 	
 	action setName(int num) {
 		personName <- "Person " + num;
@@ -79,6 +86,10 @@ species Person skills:[moving]
 		} else if (hunger > maxHunger) {
 			agentColor <- rgb("red");
 		} 
+		
+		if (isBad){
+			agentColor <- rgb("black");
+		}
 				
 		draw circle(1) color: agentColor;
 	}
@@ -178,9 +189,37 @@ species Store {
 	}
 }
 
+species SecurityGuard skills:[moving] {
+	Person target;
+	
+	action setTarget(Person t) {
+		target <- t;
+	}
+	
+	aspect base {
+		rgb agentColor <- rgb("orange");
+		draw triangle(2) color: agentColor;
+	}
+	
+	reflex moveToTarget when: target != nil
+	{
+		do goto target:target;
+	}
+	
+	reflex killBadActor when: !empty(Person at_distance distanceThreshold) {
+		ask Person at_distance distanceThreshold {
+			if(self.name = myself.target.name){
+				write "Bad actor killed " + self.name;
+				let res <- self.die();
+			}
+		}	
+	}
+}
+
 species InfoCenter {
 	list<Store> restaurants <- [];
 	list<Store> bars <- [];
+	SecurityGuard securityGuard;
 	init{
 		location <- {0,0};
 	}
@@ -197,6 +236,10 @@ species InfoCenter {
 		location <- pos;
 	}
 	
+	action setGuard(SecurityGuard guard){
+		securityGuard <- guard;
+	}
+	
 	point findBar{
 		return (1 among bars)[0].location;
 	}
@@ -209,6 +252,15 @@ species InfoCenter {
 		rgb agentColor <- rgb("black");
 		draw triangle(2) color: agentColor;
 	}
+
+	reflex discoverBadActor when: !empty(Person at_distance distanceThreshold) {
+		ask Person at_distance distanceThreshold {
+			if(self.isBad){
+				write "Bad actor found " + self.name;
+				let res <- myself.securityGuard.setTarget(self);
+			}
+		}	
+	}
 }
 
 experiment festival type:gui {
@@ -217,6 +269,7 @@ experiment festival type:gui {
 			species Person aspect:base;
 			species Store aspect:base;
 			species InfoCenter aspect:base;
+			species SecurityGuard aspect:base;
 		}
 	}
 }
