@@ -17,7 +17,7 @@ def check(kton, baskets):
 
         if len(intersection) == len(kton):
             n += 1
-    print(f'itemset: {kton} had {n} occurances')
+    print(f'itemset: {kton} had {n} occurences')
 
 
 def main():
@@ -28,9 +28,9 @@ def main():
     print("===== Step 0: Load dataset =====")
     baskets = load_document('dataset')
 
-    print(f'\tsupport: {support}% ({round(support * len(baskets))} items)')
+    print(f'\tsupport: {support}% ({round(support * len(baskets))} items) out of {len(baskets)}')
 
-    for kton in [{546, 947, 661, 217, 923}]:
+    for kton in [{704, 825, 39}]:
         check(kton, baskets)
 
     print("===== Step 1: Define range =====")
