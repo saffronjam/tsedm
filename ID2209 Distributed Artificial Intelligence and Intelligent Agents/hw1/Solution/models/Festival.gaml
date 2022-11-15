@@ -48,9 +48,9 @@ global {
 species Person skills:[moving]
 {
 	int hunger <- 0;
-	int maxHunger <- rnd(500, 1000);
+	int maxHunger <- rnd(170, 220);
 	int thirst <- 0;
-	int maxThirst <- rnd(500, 1000);
+	int maxThirst <- rnd(170, 220);
 	point targetPoint <- nil;
 	string personName <- "Undefined";
 	point infoCenterPoint <- nil;
@@ -77,18 +77,10 @@ species Person skills:[moving]
 	}
 	
 	aspect base {
-		rgb agentColor <- rgb("lightgray");
-		
-		if (hunger > maxHunger and thirst > maxThirst) {
-			agentColor <- rgb("purple");
-		} else if (thirst > maxThirst) {
-			agentColor <- rgb("blue");
-		} else if (hunger > maxHunger) {
-			agentColor <- rgb("red");
-		} 
-		
+		rgb agentColor <- rgb(hunger, 0, thirst);
+	
 		if (isBad){
-			agentColor <- rgb("black");
+			agentColor <- rgb("orange");
 		}
 				
 		draw circle(1) color: agentColor;
@@ -99,7 +91,7 @@ species Person skills:[moving]
 		bool goToNewStore <- flip(0.1);
 		if (goToNewStore or !hasBrain) {
 			targetPoint <- infoCenterPoint;
-		} else {				
+		} else {
 			if (hunger > maxHunger) {
 				targetPoint <- lastRestaurant;
 			} else {
@@ -197,7 +189,7 @@ species SecurityGuard skills:[moving] {
 	}
 	
 	aspect base {
-		rgb agentColor <- rgb("orange");
+		rgb agentColor <- rgb("green");
 		draw triangle(2) color: agentColor;
 	}
 	
