@@ -42,7 +42,6 @@ species Person skills: [moving] {
 	
 	// ------------------ START OF THE NEW PART ------------------
 	action setName(int num) {
-		write "setting name to " + num;
 		personName <- "Person " + num;
 	}
     // ------------------ END OF THE NEW PART ------------------   
