@@ -1,5 +1,5 @@
-// Bonus 1 and basic assignment
-model Festival
+// bonus 2
+model MultipleAuctionTypes
 
 global {
 	int numberOfBidders <- 5;
