@@ -19,9 +19,9 @@ def count_wedges(edge_t, edge_res):
 
     new_wedges = set()
 
-    for node in edge_res:
-        if node:
-            from_node, to_node = node
+    for edge in set(edge_res):
+        if edge:
+            from_node, to_node = edge
 
             # Count unique nodes
             nodes.add(from_node)
@@ -137,24 +137,23 @@ def main():
             time_count_wedges += time.time()-time_start
             time_start = time.time()
 
-            for i in range(s_wedges):
-                if tot_wedges > 0:
+            if tot_wedges > 0:
+                for i in range(s_wedges):
                     rnd = random.uniform(0, 1)
                     if rnd <= len(new_wedges) / tot_wedges:
                         wedge_res[i] = random.choice(list(new_wedges))
                         is_closed[i] = False
 
             time_write_wedges += time.time() - time_start
-            
-
+        
         p = is_closed.count(True)/s_wedges
         k_t = 3*p
         T_t = (p*(t**2))/(s_edges*(s_edges-1)) * tot_wedges
 
-        if t % 100 == 0:
-            print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t:.4f}; Init {time_init/t:.4f}, Triangles{time_triangles/t:.4f}, Edges{time_new_edge/t:.4f}, Wedges{time_count_wedges/t_updated:.4f}, Write{time_write_wedges/t_updated:.4f}', end='\r')
+        if t % 10 == 0:
+            print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t*100.0:.2f}%; Init {time_init/t:.4f}, Triangles{time_triangles/t:.4f}, Edges{time_new_edge/t:.4f}, Wedges{time_count_wedges/t_updated:.4f}, Write{time_write_wedges/t_updated:.4f}', end='\r')
 
-    print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t:.4f}')
+    print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t*100.0:.2f}%')
 
 if __name__ == '__main__':
     main()
