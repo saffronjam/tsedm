@@ -26,22 +26,75 @@ global {
 }
 
 species Scene skills:[fipa]{
+	float lightShow <- rnd(0.0,1.0);
+	float speakers <- rnd(0.0,1.0);
+	float band <- rnd(0.0,1.0);
 	
 	action setPosition(point pos){
 		location <- pos;
 	}
 	
+	reflex receiveRequests when: not empty(requests){
+		loop msg over: requests{
+			do agree message: msg contents: [lightShow, speakers, band];
+			do inform message: msg contents: [];
+			
+			let discard <- msg.contents;
+		}	
+	}
+	
+	reflex artistChange when: flip(0.001){
+		lightShow <- rnd(0.0,1.0);
+		speakers <- rnd(0.0,1.0);
+		band <- rnd(0.0,1.0);
+	}
 	
 	aspect base {
-		rgb agentColor <- rgb("black");
+		rgb agentColor <- rgb(lightShow*255,speakers*255,band*255,0.5);
 		draw square(15) color: agentColor;
 	}
 }
 
 species Person skills:[fipa, moving]{
+	float lightShow <- rnd(0.0,1.0);
+	float speakers <- rnd(0.0,1.0);
+	float band <- rnd(0.0,1.0);
 	
+	float maxUtility <- 0.0;
+	Scene bestScene <- nil;
+	
+	reflex askScenesWassup when: flip(0.1){
+		do start_conversation to: list(Scene) protocol: 'fipa-request' performative:'request' contents:[];
+	}
+	
+	reflex receiveAgree when: not empty(agrees){
+		loop msg over: agrees{
+			float sceneLightShow <- float(msg.contents[0]);
+			float sceneSpeakers <- float(msg.contents[1]);
+			float sceneBand <- float(msg.contents[2]);
+			
+			float sceneUtility <- lightShow*sceneLightShow + speakers*sceneSpeakers + band*sceneBand;
+			
+			
+			if(sceneUtility > maxUtility){
+				bestScene <- Scene(msg.sender);
+				maxUtility <- sceneUtility; 
+			}
+			
+			let discard <- msg.contents;
+		}
+	}
+	
+	reflex dance when: bestScene != nil and self distance_to bestScene < 5{
+		do wander;
+	}
+	
+	reflex walkToScene when: bestScene != nil and self distance_to bestScene >= 5{
+		do goto target: bestScene;
+	}
+
 	aspect base{
-		rgb agentColor <- rgb("black");
+		rgb agentColor <- rgb(lightShow*255,speakers*255,band*255,0.5);
 		draw circle(1) color: agentColor;
 	}
 }
@@ -52,6 +105,6 @@ experiment HighestUtility type:gui{
 		display myDisplay {
 			species Person aspect:base;
 			species Scene aspect:base;
-		}	
+		}
 	}
 }
