@@ -43,7 +43,7 @@ def plot(data, name):
 
 def main():
     # Options
-    print_timers = True
+    print_timers = False
 
     # Dataset
     dataset = 'web-Stanford'
@@ -123,7 +123,7 @@ def main():
             if print_timers:
                 print(f"({timestamp()}) Time {t}; Upt Closed {timer_update_closed:.3f}; Upt E Res {timer_update_edge_res:.3f}; Cnt and New Wedges {timer_count_wedges_and_get_new_wedges:.3f}; Upt W Res {timer_update_wedge_res:.3f}", end='\r')
             else:
-                print(f"({timestamp()}) Time {t}; Triangles {T_t:.0f}; Transitivity {k_t:.4f}")
+                print(f"({timestamp()}) Time {t}; Triangles {T_t:.0f}; Transitivity {k_t:.4f}", end='\r')
 
             triangles_plot_data.append(T_t)
             transitivity_plot_data.append(k_t)
