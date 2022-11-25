@@ -51,7 +51,7 @@ def count_wedges(edge_t, edge_res):
 def main():
     print('=== Mining data streams ===')
 
-    file = open('datasets/web-Stanford.txt', 'r')
+    file = open('datasets/p2p-Gnutella08.txt', 'r')
     lines = file.readlines()
     random.shuffle(lines)
     shuffled_lines = lines
@@ -59,11 +59,11 @@ def main():
     print(f'Found {len(shuffled_lines)} lines')
 
     # Uniform reservoir of edges
-    s_edges = 10000
+    s_edges = 2000
     edge_res = [None] * s_edges
 
     # Wedges seen in edge reservoir
-    s_wedges = 10000
+    s_wedges = 2000
     wedge_res = [None] * s_wedges
 
     # is_closed[i] undicates whether wedge_res[i] is closed
@@ -81,7 +81,8 @@ def main():
 
     t = 0
     t_updated = 0
-    counter = 0
+    updated_edges = 0
+    updated_wedges = 0
     while True:
         time_start = time.time()
 
@@ -133,7 +134,7 @@ def main():
         for i in range(s_edges):
             # If random number is between 0 and k, replace the node at that place
             if random.uniform(0, 1) <= 1 / t:
-                counter += 1
+                updated_edges += 1
                 edge_res[i] = edge_t
                 edges_updated = True
 
@@ -150,25 +151,31 @@ def main():
             time_count_wedges += time.time()-time_start
             time_start = time.time()
 
+
             if tot_wedges > 0:
                 for i in range(s_wedges):
                     rnd = random.uniform(0, 1)
                     if rnd <= len(new_wedges) / tot_wedges:
+                        updated_wedges += 1
                         wedge_res[i] = random.choice(list(new_wedges))
                         is_closed[i] = False
 
             time_write_wedges += time.time() - time_start
 
         unique_edges = len(set(edge_res)) / s_edges
-        
+        unique_wedges = len(set(wedge_res)) / s_wedges
+        non_none = len(list(filter(lambda x: x, wedge_res)))
+
         p = is_closed.count(True)/s_wedges
         k_t = 3*p
         T_t = (p*(t**2))/(s_edges*(s_edges-1)) * tot_wedges
 
-        if t % 500 == 0:
-            print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t:.4f} Updated {counter}; Unique {unique_edges}; Init {time_init/t:.4f}, Triangles{time_triangles/t:.4f}, Edges{time_new_edge/t:.4f}, Wedges{time_count_wedges/t_updated:.4f}, Write{time_write_wedges/t_updated:.4f}', end='\r')
-            counter = 0
-    print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t:.4f}%')
+        if t % 1000 == 0:
+            # Init {time_init/t:.4f}, Triangles{time_triangles/t:.4f}, Edges{time_new_edge/t:.4f}, Wedges{time_count_wedges/t_updated:.4f}, Write{time_write_wedges/t_updated:.4f}
+            print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t:.4f} UpdatedE {updated_edges}; UpdatedW {updated_wedges}; UniqueE {unique_edges}; UniqueW {unique_wedges}; Non-None {non_none}; ', end='\r')
+            updated_edges = 0
+            updated_wedges = 0
+    print(f'Time {t}; Triangles {round(T_t)}; Transitivity {k_t:.4f}')
 
 
 if __name__ == '__main__':

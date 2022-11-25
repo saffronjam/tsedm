@@ -71,14 +71,14 @@ def count_wedges(edge_t, edge_res):
 def main():
     print('=== Mining data streams ===')
 
-    file = open('datasets/web-Stanford.txt', 'r')
+    file = open('datasets/facebook.txt', 'r')
 
     # Uniform reservoir of edges
-    s_edges = 1000
+    s_edges = 500
     edge_res = [None] * s_edges
 
     # Wedges seen in edge reservoir
-    s_wedges = 1000
+    s_wedges = 500
     wedge_res = [None] * s_wedges
 
     # is_closed[i] undicates whether wedge_res[i] is closed
@@ -109,7 +109,7 @@ def main():
             continue
 
         # Sanitize
-        edge_raw = line.replace('\n', '').split('\t')
+        edge_raw = line.replace('\n', '').split(' ')
         edge_t = (int(edge_raw[0]), int(edge_raw[1]))
 
         # Skip self loops
