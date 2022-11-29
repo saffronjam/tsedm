@@ -47,7 +47,7 @@ species Scene skills:[fipa]{
 		}	
 	}
 	
-	reflex artistChange when: flip(0.001){
+	reflex artistChange when: flip(0.005){
 		lightShow <- rnd(0.0,1.0);
 		speakers <- rnd(0.0,1.0);
 		band <- rnd(0.0,1.0);
@@ -86,7 +86,7 @@ species Person skills:[fipa, moving]{
 			
 			if(not leader){
 				leaderScene <- Scene(msg.contents[0]);
-				if(crowdMass > 0.5){
+				if(crowdMass > 0.3){
 					bestScene <- leaderScene;
 				}	
 			}
