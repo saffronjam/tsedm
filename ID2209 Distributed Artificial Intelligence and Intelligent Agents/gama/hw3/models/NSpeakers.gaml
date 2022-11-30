@@ -2,10 +2,11 @@
 model NSpeakers
 
 global {
-	int size <- 4;
+	int size <- 5;
 	
 	init {
 		create Speaker number:size;
+		create Square number:size*size;
 		
 		loop counter from: 0 to: size-1{
 			Speaker speaker <- Speaker[counter];
@@ -14,6 +15,43 @@ global {
 			temp <- speaker.setY(-1);
 			temp <- speaker.calculateLocation();
 		}
+		
+		loop row from: 0 to: size - 1{
+			loop col from: 0 to: size - 1{
+				Square square <- Square[row*size+col];
+				let temp <-	square.setPos(row, col);
+			} 
+		}
+	}
+}
+
+species Square{
+	int col;
+	int row;
+	
+	action setPos(int r, int c){
+		row <- r;
+		col <- c;
+			location <- {(col/size)*100 + 50/size, (row/size)*100 + 50/size};
+	}
+	
+	aspect base {
+		rgb agentColor <- rgb("brown");
+		if(col mod 2 = 0){
+			if(row mod 2 = 0){			
+				agentColor <- rgb("brown");	
+			}else{
+				agentColor <- rgb("beige");
+			}	
+		}else{
+			if(row mod 2 = 0){			
+				agentColor <- rgb("beige");	
+			}else{
+				agentColor <- rgb("brown");
+			}	
+		}
+		draw square(100/size) color: agentColor;
+		
 	}
 }
 
@@ -32,11 +70,11 @@ species Speaker{
 	
 	action calculateLocation{
 		if (y < 0){
-			location <- {(id/size)*80 + 10, 5};
+			location <- {(id/size)*100 + 50/size, -20/size};
 		}
 		else
 		{
-			location <- {(id/size)*80 + 10, (y/size)*80 + 10};
+			location <- {(id/size)*100 + 50/size, (y/size)*100 + 50/size};
 		}
 	}
 	
@@ -124,13 +162,14 @@ species Speaker{
 			
 		}
 				
-		draw triangle(2) color: agentColor;
+		draw circle(20/size) color: agentColor;
 	}
 }
 
 experiment nspeakers type:gui{
 	output{
 		display myDisplay {
+			species Square aspect:base;
 			species Speaker aspect:base;
 		}	
 	}
