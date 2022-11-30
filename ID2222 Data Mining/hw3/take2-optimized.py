@@ -1,10 +1,12 @@
 import random
 import time
 
+
 def timestamp():
     import datetime
     now = datetime.datetime.now()
     return f'{now.minute}:{now.second}'
+
 
 def count_wedges(edge_res, edge_t):
     tot_wedges = 0
@@ -46,11 +48,11 @@ def main():
     print_timers = False
 
     # Dataset
-    dataset = 'web-Stanford'
+    dataset = 'facebook'
     file = open(f'datasets/{dataset}.txt', 'r')
     lines = file.readlines()
     random.shuffle(lines)
-    split = '\t'
+    split = ' '
 
     # Plot options
     steps = 10000
@@ -83,7 +85,7 @@ def main():
             if wedge_res[i]:
                 if (edge_t[0] == wedge_res[i][0] or edge_t[0] == wedge_res[i][1]) and (edge_t[1] == wedge_res[i][0] or edge_t[1] == wedge_res[i][1]):
                     is_closed[i] = True
-                    
+
         timer_update_closed += time.time() - now
 
         # Step 2: Update edge reservoir with 1/t
@@ -123,7 +125,8 @@ def main():
             if print_timers:
                 print(f"({timestamp()}) Time {t}; Upt Closed {timer_update_closed:.3f}; Upt E Res {timer_update_edge_res:.3f}; Cnt and New Wedges {timer_count_wedges_and_get_new_wedges:.3f}; Upt W Res {timer_update_wedge_res:.3f}", end='\r')
             else:
-                print(f"({timestamp()}) Time {t}; Triangles {T_t:.0f}; Transitivity {k_t:.4f}", end='\r')
+                print(
+                    f"({timestamp()}) Time {t}; Triangles {T_t:.0f}; Transitivity {k_t:.4f}", end='\r')
 
             triangles_plot_data.append(T_t)
             transitivity_plot_data.append(k_t)
@@ -131,7 +134,8 @@ def main():
     if print_timers:
         print(f"({timestamp()}) Time {t}; Upt Closed {timer_update_closed:.3f}; Upt E Res {timer_update_edge_res:.3f}; Cnt and New Wedges {timer_count_wedges_and_get_new_wedges:.3f}; Upt W Res {timer_update_wedge_res:.3f}")
     else:
-        print(f"({timestamp()}) Time {t}; Triangles {T_t:.0f}; Transitivity {k_t:.4f}")
+        print(
+            f"({timestamp()}) Time {t}; Triangles {T_t:.0f}; Transitivity {k_t:.4f}")
     plot(triangles_plot_data, f"triangles-{dataset}")
     plot(transitivity_plot_data, f"transitivity-{dataset}")
 
