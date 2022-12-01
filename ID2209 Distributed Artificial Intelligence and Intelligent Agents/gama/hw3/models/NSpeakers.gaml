@@ -2,7 +2,7 @@
 model NSpeakers
 
 global {
-	int size <- 5;
+	int size <- 7;
 	
 	init {
 		create Speaker number:size;
