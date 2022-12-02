@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 public class Jabeja {
     final static Logger logger = Logger.getLogger(Jabeja.class);
@@ -76,7 +77,7 @@ public class Jabeja {
             partner = findPartner(node.getId(), getSample(node.getId()));
         }
 
-        if(partner == null)
+        if (partner == null)
             return;
 
         // swap the colors
@@ -93,18 +94,19 @@ public class Jabeja {
         Node bestPartner = null;
         double highestBenefit = 0;
 
-        for (var node: nodes) {
+        for (var node : nodes) {
             var candidate = entireGraph.get(node);
 
-            int degree = getDegree(nodep, candidate.getColor()) + getDegree(candidate, nodep.getColor());
-            int current = getDegree(nodep, nodep.getColor()) + getDegree(candidate, candidate.getColor());
+            double alpha = 2.0f;
 
-            if(degree > highestBenefit && degree > current){
+            var degree = Math.pow(getDegree(nodep, candidate.getColor()), alpha) + Math.pow(getDegree(candidate, nodep.getColor()), alpha);
+            var current = Math.pow(getDegree(nodep, nodep.getColor()), alpha) + Math.pow(getDegree(candidate, candidate.getColor()), alpha);
+
+            if (degree > highestBenefit && degree * T > current) {
                 highestBenefit = degree;
                 bestPartner = candidate;
             }
         }
-
 
         return bestPartner;
     }
@@ -225,18 +227,17 @@ public class Jabeja {
 
         //output file name
         File inputFile = new File(config.getGraphFilePath());
-        outputFilePath = "output/result";
-//        outputFilePath = config.getOutputDir() +
-//                File.separator +
-//                inputFile.getName() + "_" +
-//                "NS" + "_" + config.getNodeSelectionPolicy() + "_" +
-//                "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
-//                "T" + "_" + config.getTemperature() + "_" +
-//                "D" + "_" + config.getDelta() + "_" +
-//                "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
-//                "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
-//                "A" + "_" + config.getAlpha() + "_" +
-//                "R" + "_" + config.getRounds() + ".txt";
+        outputFilePath = config.getOutputDir() +
+                File.separator +
+                inputFile.getName() + "_" +
+                "NS" + "_" + config.getNodeSelectionPolicy() + "_" +
+                "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
+                "T" + "_" + config.getTemperature() + "_" +
+                "D" + "_" + config.getDelta() + "_" +
+                "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
+                "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
+                "A" + "_" + config.getAlpha() + "_" +
+                "R" + "_" + config.getRounds() + ".txt";
 
         if (!resultFileCreated) {
             File outputDir = new File(config.getOutputDir());
