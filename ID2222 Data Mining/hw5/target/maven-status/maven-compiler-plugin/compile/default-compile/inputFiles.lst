@@ -1,0 +1,10 @@
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/Node.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/Jabeja.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/rand/RandNoGenerator.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/io/FileIO.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/Main.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/config/Config.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/config/GraphInitColorPolicy.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/config/NodeSelectionPolicy.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/io/GraphReader.java
+/home/pierrelf/emilk2/tsedm/ID2222 Data Mining/hw5/src/main/java/se/kth/jabeja/io/CLI.java

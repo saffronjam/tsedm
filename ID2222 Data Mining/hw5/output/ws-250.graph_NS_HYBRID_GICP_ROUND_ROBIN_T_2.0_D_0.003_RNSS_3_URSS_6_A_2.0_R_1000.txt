@@ -1,0 +1,4 @@
+# Migration is number of nodes that have changed color.
+
+Round		Edge-Cut		Swaps		Migrations		Skipped
+0		590		0		199
