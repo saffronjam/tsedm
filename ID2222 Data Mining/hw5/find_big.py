@@ -3,8 +3,8 @@ import os
 
 def get_last_lines():
     last_lines = {}
-    for filename in os.listdir('output'):
-        with open('output/' + filename, "rb") as file:
+    for filename in os.listdir('output-add20'):
+        with open('output-add20/' + filename, "rb") as file:
             try:
                 file.seek(-2, os.SEEK_END)
                 while file.read(1) != b'\n':

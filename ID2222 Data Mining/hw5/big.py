@@ -12,7 +12,7 @@ for t in np.arange(1.0, 4.0, 0.25):
         i += 1
         if i % 12:
             print(f"sleeping with T={t} delay={d}")
-            time.sleep(2)
+            time.sleep(5)
 
         os.system(
-            f"java -Xmx5000m -jar target/assignment4-jabeja-1.0-jar-with-dependencies.jar -graph=./graphs/3elt.graph -temp={t} -delta={d} $@ >> /dev/null &")
+            f"java -Xmx5000m -jar target/assignment4-jabeja-1.0-jar-with-dependencies.jar -graph=./graphs/facebook.graph -temp={t} -delta={d} $@ >> /dev/null &")
