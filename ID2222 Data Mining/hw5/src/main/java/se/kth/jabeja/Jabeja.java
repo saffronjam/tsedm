@@ -22,6 +22,7 @@ public class Jabeja {
     private int round;
     private float T;
     private boolean resultFileCreated = false;
+    private final int acceptancePolicy = 0;
 
     //-------------------------------------------------------------------
     public Jabeja(HashMap<Integer, Node> graph, Config config) {
@@ -31,6 +32,14 @@ public class Jabeja {
         this.numberOfSwaps = 0;
         this.config = config;
         this.T = config.getTemperature();
+    }
+
+
+    private double getAcceptanceProbability(double oldCost, double newCost) {
+        if (acceptancePolicy == 1) {
+            return Math.pow(Math.E, (newCost - oldCost) / T);
+        }
+        return newCost * T > oldCost ? 1 : 0;
     }
 
 
@@ -102,7 +111,7 @@ public class Jabeja {
             var degree = Math.pow(getDegree(nodep, candidate.getColor()), alpha) + Math.pow(getDegree(candidate, nodep.getColor()), alpha);
             var current = Math.pow(getDegree(nodep, nodep.getColor()), alpha) + Math.pow(getDegree(candidate, candidate.getColor()), alpha);
 
-            if (degree > highestBenefit && degree * T > current) {
+            if (degree > highestBenefit && getAcceptanceProbability(current, degree) > new Random().nextDouble()) {
                 highestBenefit = degree;
                 bestPartner = candidate;
             }
