@@ -22,7 +22,7 @@ public class Jabeja {
     private int round;
     private float T;
     private boolean resultFileCreated = false;
-    private final int acceptancePolicy = 0;
+    private final int acceptancePolicy = 1;
 
     //-------------------------------------------------------------------
     public Jabeja(HashMap<Integer, Node> graph, Config config) {

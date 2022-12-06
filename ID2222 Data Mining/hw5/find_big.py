@@ -3,8 +3,9 @@ import os
 
 def get_last_lines():
     last_lines = {}
-    for filename in os.listdir('output-add20'):
-        with open('output-add20/' + filename, "rb") as file:
+    folder = 'output'
+    for filename in os.listdir(folder):
+        with open(folder + '/' + filename, "rb") as file:
             try:
                 file.seek(-2, os.SEEK_END)
                 while file.read(1) != b'\n':
@@ -30,7 +31,7 @@ def find_largest(lines):
             best_edge_cut = edge_cut
             best_filename = filename
 
-    return filename, best_line, best_edge_cut
+    return best_filename, best_line, best_edge_cut
 
 
 def main():
