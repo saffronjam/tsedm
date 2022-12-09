@@ -29,6 +29,9 @@ public class CLI {
     private int UNIFORM_RAND_SAMPLE_SIZE = 6;
     @Option(name = "-temp", usage = "Simulated annealing temperature.")
     private float TEMPERATURE = 2;
+
+    @Option(name = "-tmin", usage = "Simulated annealing minimum temperature.")
+    private float TMIN = 0.001f;
     @Option(name = "-delta", usage = "Simulated annealing delta.")
     private float DELTA = (float) 0.003;
     @Option(name = "-seed", usage = "Seed.")
@@ -93,6 +96,7 @@ public class CLI {
                 .setRounds(ROUNDS)
                 .setSeed(SEED)
                 .setTemperature(TEMPERATURE)
+                .setTmin(TMIN)
                 .setGraphFilePath(GRAPH)
                 .setNodeSelectionPolicy(nodeSelectionPolicy)
                 .setGraphInitialColorPolicy(graphInitColorSelectionPolicy)

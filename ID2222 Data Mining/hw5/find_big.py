@@ -1,9 +1,13 @@
 import os
+import sys
 
 
 def get_last_lines():
     last_lines = {}
     folder = 'output'
+    if (len(sys.argv) >= 2):
+        folder = 'output-' + sys.argv[1]
+
     for filename in os.listdir(folder):
         with open(folder + '/' + filename, "rb") as file:
             try:
@@ -39,6 +43,12 @@ def main():
     filename, line, edge_cut = find_largest(last_lines)
 
     print(f'best edge cut: {edge_cut} ({filename})')
+
+    folder = 'output'
+    if (len(sys.argv) >= 2):
+        folder = 'output-' + sys.argv[1]
+
+    os.system('./plot.sh ' + folder + "/" + filename)
 
 
 if __name__ == '__main__':

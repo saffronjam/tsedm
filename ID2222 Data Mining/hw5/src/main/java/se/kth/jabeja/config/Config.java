@@ -5,6 +5,7 @@ public class Config {
     private Integer rounds;
     private Integer randomNeighborsSampleSize;
     private Float temperature;
+    private Float tmin;
     private Float delta;
     private Integer seed;
     private Integer uniformRandomSampleSize;
@@ -62,8 +63,20 @@ public class Config {
         return temperature;
     }
 
+    public Float getTmin() {
+        if (tmin == null) {
+            throw new NullPointerException("Tmin is not set");
+        }
+        return tmin;
+    }
+
     public Config setTemperature(Float temperature) {
         this.temperature = temperature;
+        return this;
+    }
+
+    public Config setTmin(Float tmin) {
+        this.tmin = tmin;
         return this;
     }
 
