@@ -9,16 +9,16 @@
 model CrowdHighestUtility
 
 global {
-	int numberOfPersons <- 200;
-	int numberOfScenes <- 4;
+	int num_guests <- 200;
+	int num_scenes <- 4;
 	
 	init { 
-		create Person number:numberOfPersons;
-		create Scene number:numberOfScenes;
+		create Person number:num_guests;
+		create Scene number:num_scenes;
 		
 		list<point> points <- [{10,10}, {90,10}, {10,90}, {90,90}];
 		
-		loop counter from: 0 to: numberOfScenes - 1{
+		loop counter from: 0 to: num_scenes - 1{
 			Scene scene <- Scene[counter];
 			let temp <- scene.setPosition(points at counter);
 		}
@@ -109,7 +109,7 @@ species Person skills:[fipa, moving]{
 	reflex receiveAgrees when: not empty(agrees){
 		loop msg over: agrees{
 			sceneCounter <- sceneCounter + 1;
-			if (sceneCounter > numberOfScenes){
+			if (sceneCounter > num_scenes){
 				sceneCounter <- 0;
 				maxUtility <- 0.0;
 			}
@@ -127,7 +127,7 @@ species Person skills:[fipa, moving]{
 				}
 			}
 			
-			if(sceneCounter = numberOfScenes){
+			if(sceneCounter = num_scenes){
 				bestScene <- candidateScene;
 			}
 			
