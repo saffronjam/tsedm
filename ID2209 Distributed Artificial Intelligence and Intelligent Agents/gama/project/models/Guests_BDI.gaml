@@ -7,7 +7,7 @@ model Guests
 global {
 	int num_guests <- 10;
 	int num_scenes <- 5;
-	int num_restaurants <- 1;
+	int num_restaurants <- 3;
 	
 	image_file steak_shape const: true <- image_file('../images/steak.png');
 	image_file egg_shape const: true <- image_file('../images/egg.png');
@@ -31,6 +31,7 @@ global {
 			Restaurant restaurant <- Restaurant[counter];
 			let spacing <- 100/num_restaurants;
 			let temp <- restaurant.setPosition({spacing * counter+ spacing / 2, 10});
+			temp <- restaurant.setFood(food_types at counter);
 		}
 		
 		loop counter from: 0 to: num_scenes - 1{
@@ -42,6 +43,7 @@ global {
 	
 	//string mine_at_location <- "mine_at_location";
 	string hype_scenes <- "hype_scenes";
+	string good_restaurants <- "good_restaurants";
 	
 	//string empty_mine_location <- "empty_mine_location";
 	string no_longer_hype <- "no_longer_hype";
@@ -51,6 +53,7 @@ global {
 	
 	//predicate choose_gold_mine <- new_predicate("choose a gold mine");
     predicate choose_hype_scene <- new_predicate("choose a hype scene");
+    predicate choose_restaurant <- new_predicate("choose_restaurant");
     
     //predicate has_gold <- new_predicate("extract gold");
     predicate dance_at_scene <- new_predicate("dance_at_scene");
@@ -58,55 +61,56 @@ global {
     
     //predicate find_gold <- new_predicate("find gold") ;
     predicate find_hype <- new_predicate("find hype");
+    predicate find_food <- new_predicate("find_food");
     
     //predicate sell_gold <- new_predicate("sell gold") ;
     predicate eat_food <- new_predicate("eat_food");   
     
-    
-    reflex newArtists when: time mod 400 = 0{
-    	list<Scene> hyped <- 2 among Scene;
-    	
-    	loop scene over: hyped{
-    		let tmp <- scene.setHype(true);
-    	}
-    	loop scene over: Scene-hyped{
-    		let tmp <- scene.setHype(false);
-    	}
-	}
-    
 }
 
 species Guest skills:[moving] control: simple_bdi{
+	string food_trait <- (1 among ["meat","vegetarian","vegan"])[0];
+	string music_trait <- (1 among ["rock","disco","pop"])[0];
 	point target <- nil;
-	Restaurant the_restaurant <- Restaurant[0];
-	int food_eaten <- 0;
-	float view_dist <- 100.0;
+	float view_dist <- 1000.0;
 	int hunger <- 0;
+	int hunger_threshold <- 300;
 	
 	init {
     	do add_desire(find_hype);
     }
     
     reflex becomeHungry{
-    	hunger <- hunger + rnd(0,1);
+    	hunger <- hunger + rnd(0,3);
     }
     
-    reflex isHungry when: hunger > 500 {
+    reflex isHungry when: hunger > hunger_threshold {
 		do add_belief(is_hungry);
     }
     
-    perceive target: Scene where (each.hype) in: view_dist {
+    perceive target: Scene where (each.music_trait = music_trait) in: view_dist {
 	    focus id: hype_scenes var:location;
 	    ask myself {
 	        do remove_intention(find_hype, false);
 	    }
     }
     
+    perceive target: Restaurant where (each.food_trait = food_trait) in: view_dist {
+	    focus id: good_restaurants var:location;
+	    ask myself {
+	        do remove_intention(find_food, false);
+	    }
+    }
+    
     rule belief: scene_found new_desire: dance_at_scene strength: 2.0;
     rule belief: is_hungry new_desire: eat_food strength: 3.0;
   
-	plan lets_wander intention: find_hype {
-		do wander;
+	plan find_scene intention: find_hype {
+		do wander amplitude:0.1 speed:1.0;
+	}
+	
+	plan find_restaurant intention: find_food {
+		do wander amplitude:0.1 speed:1.0;
 	}
 	
     plan goto_scene intention: dance_at_scene {
@@ -117,10 +121,7 @@ species Guest skills:[moving] control: simple_bdi{
 	        do goto target: target ;
 	        if (target = location)  {
 		        Scene current_scene <- Scene first_with (target = each.location);
-		        if current_scene.hype {
-		            //do add_belief(dance_at_scene);
-		            //ask current_mine {quantity <- quantity - 1;}    
-		        } else {
+		        if current_scene.music_trait != music_trait {
 		            do remove_belief(new_predicate(hype_scenes, ["location_value"::target]));
 		        }
 		        target <- nil;
@@ -130,7 +131,6 @@ species Guest skills:[moving] control: simple_bdi{
     
     plan choose_best_scene intention: choose_hype_scene instantaneous: true {
 	    list<point> possible_scenes <- get_beliefs_with_name(hype_scenes) collect (point(get_predicate(mental_state (each)).values["location_value"]));
-	    write length(possible_scenes);
 	    if (empty(possible_scenes)) {
 	        do remove_intention(dance_at_scene, true); 
 	    } else {
@@ -139,60 +139,89 @@ species Guest skills:[moving] control: simple_bdi{
 	    do remove_intention(choose_hype_scene, true); 
     }
     
-    plan goto_food intention: eat_food {
-	    do goto target: the_restaurant;
-	    if (the_restaurant.location = location)  {
-	        do remove_belief(is_hungry);
-	        do remove_intention(eat_food, true);
-	        food_eaten <- food_eaten + 1;
-	    	hunger <- 0;
+	plan goto_food intention: eat_food {
+	    if (target = nil) {
+	        do add_subintention(get_current_intention(), choose_restaurant, true);
+	        do current_intention_on_hold();
+	    } else {
+	        do goto target: target ;
+	        if (target = location){
+	    		hunger <- 0;
+	    		do remove_belief(is_hungry);
+	        	do remove_intention(eat_food, true); 
+		        //Scene current_scene <- Scene first_with (target = each.location);
+		        //if not current_scene.hype {
+		        //    do remove_belief(new_predicate(hype_scenes, ["location_value"::target]));
+		        //}
+		        target <- nil;
+	        }
+	    }   
+    }
+    
+    plan choose_restaurant intention: choose_restaurant {
+	    list<point> possible_restaurants <- get_beliefs_with_name(good_restaurants) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+	    if(empty(possible_restaurants)){
+	        do remove_intention(eat_food, true); 
+	    }else{
+	        target <- (possible_restaurants with_min_of (each distance_to self)).location;
 	    }
+	    do remove_intention(choose_restaurant, true);
     }
 
-    
-
 	aspect base{
-		if(hunger > 500){
-			draw steak_shape size: hunger/100;
-		}else{
-			draw sallad_mask_shape size: 4;
+		switch food_trait{
+			match "meat"{draw steak_shape size: 5;}
+			match "vegetarian"{draw egg_shape size: 5;}
+			match "vegan"{draw sallad_shape size: 5;}
 		}
+		
+		if(hunger > hunger_threshold){
+			draw "hungry " + hunger size: 10 color: #black font:font("Helvetica", 20 , #plain) border:#red;
+		}else{
+			draw music_trait size: 10 color: #black font:font("Helvetica", 20 , #plain) border:#red;
+		}	
 	}
 }
 
 species Scene skills:[fipa]{
-	bool hype;
+	string music_trait <- (1 among ["rock","disco","pop"])[0];
 	
 	action setPosition(point pos){
 		location <- pos;
 	}
 	
-	action setHype(bool h){
-		hype <- h;
+	reflex newArtists when: time mod 200 = 0{
+		music_trait <- (1 among ["rock","disco","pop"])[0];
 	}
-
+	
 	aspect base {
-		if(hype){
-			draw scene_shape size: 25;
-		}else{
-			draw scene_shape size: 10;
-		}
+		draw scene_shape size: 15;
+			draw music_trait size: 10 color: #black font:font("Helvetica", 20 , #plain) border:#red;
 	}
 }
 
 species Restaurant{
+	string food_trait;
+	action setFood(string food){
+		food_trait <- food;
+	}
+	
 	action setPosition(point pos){
 		location <- pos;
 	}
 	
 	aspect base {
-		draw restaurant_shape size: {15,15};
+		switch food_trait{
+			match "meat" {draw restaurant_shape size: {15,15};}
+			match "vegetarian" {draw restaurant_vegetarian_shape size: {15,15};}
+			match "vegan" {draw restaurant_vegan_shape size: {15,15};}	
+		}
 	}
 }
 
 experiment Guests type:gui{
 	output{
-		display guests type: opengl show_fps: true antialias: false{
+		display guests {
 			image terrain;
 			species Scene aspect:base;
 			species Restaurant aspect:base;
