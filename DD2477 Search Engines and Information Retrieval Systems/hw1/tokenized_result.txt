@@ -18,7 +18,6 @@ name
 by
 an
 at-sign
-.
 the
 syntax
 of
@@ -31,7 +30,7 @@ that
 in
 the
 previous
-section.
+section
 the
 concerns
 identified
@@ -55,7 +54,7 @@ an
 email
 context
 as
-well.
+well
 the
 domain
 name
@@ -81,7 +80,7 @@ for
 testing
 and
 troubleshooting
-purposes.
+purposes
 the
 local
 part
@@ -92,7 +91,7 @@ the
 quoting
 conventions
 described
-below.
+below
 the
 quoted
 forms
@@ -107,7 +106,7 @@ required
 for
 some
 legitimate
-purposes.
+purposes
 hence
 they
 should
@@ -131,7 +130,7 @@ evaluation
 by
 the
 destination
-host.
+host
 the
 exact
 rules
@@ -166,7 +165,7 @@ character
 separated
 by
 a
-period.
+period
 for
 example
 these
@@ -194,7 +193,7 @@ length
 limit
 on
 email
-addresses.
+addresses
 that
 limit
 is
@@ -229,7 +228,7 @@ total
 length
 of
 320
-characters.
+characters
 systems
 that
 handle
@@ -249,7 +248,7 @@ though
 they
 are
 rarely
-encountered.
+encountered
 the
 syntax
 for
@@ -261,7 +260,6 @@ is
 specified
 in
 rfc1738
-.
 the
 syntax
 for
@@ -276,7 +274,6 @@ is
 specified
 in
 rfc2396
-.
 the
 uri
 syntax
@@ -300,7 +297,7 @@ mailto
 that
 is
 being
-used.
+used
 while
 it
 is
@@ -322,7 +319,7 @@ they
 are
 general
 enough
---essentially
+essentially
 only
 specifying
 the
@@ -347,7 +344,7 @@ must
 be
 escaped
 if
-used--
+used
 to
 provide
 little
@@ -355,7 +352,7 @@ significant
 filtering
 or
 validation
-power.
+power
 the
 following
 characters
@@ -364,7 +361,6 @@ reserved
 in
 many
 uris
---
 they
 must
 be
@@ -377,7 +373,7 @@ purpose
 or
 must
 be
-encoded.
+encoded
 some
 particular
 schemes
@@ -409,7 +405,7 @@ to
 particular
 uri
 component
-parts.
+parts
 in
 addition
 control
@@ -418,7 +414,7 @@ the
 space
 character
 the
-double-
+double
 quote
 character
 and
@@ -438,7 +434,7 @@ or
 escaped
 as
 discussed
-below.
+below
 the
 colon
 after
@@ -467,7 +463,7 @@ used
 elsewhere
 in
 some
-schemes.
+schemes
 when
 it
 is
@@ -496,7 +492,7 @@ digits
 representing
 its
 octet
-value.
+value
 see
 section
 2.4.1
@@ -505,7 +501,7 @@ rfc2396
 for
 an
 exact
-definition.
+definition
 unless
 it
 is
@@ -550,7 +546,7 @@ except
 the
 scheme
 name
-itself.
+itself
 a
 generic
 uri
@@ -582,7 +578,7 @@ in
 use
 obeys
 that
-syntax.
+syntax
 consequently
 applications
 that
@@ -602,21 +598,19 @@ and
 then
 apply
 scheme-specific
-tests.
+tests
 the
 rules
 for
 two
 of
 those
---
 http
 rfc1738
 and
 mailto
 rfc2368
 urls
---
 are
 discussed
 below
@@ -648,15 +642,15 @@ should
 consult
 the
 relevant
-scheme-
+scheme
 definition
 documents
 for
 precise
 syntax
 and
-relationships.
-4.2.
+relationships
+4.2
 the
 http
 url
@@ -694,7 +688,7 @@ part
 and
 a
 fragment
-identifier.
+identifier
 these
 are
 separated
@@ -722,7 +716,6 @@ and
 a
 hash
 mark
-.
 so
 we
 have
@@ -736,7 +729,7 @@ other
 variations
 on
 that
-form.
+form
 there
 is
 also
@@ -758,11 +751,11 @@ e.g.
 enter
 into
 a
-form.
+form
 see
 rfc2616
 for
-details.
+details
 these
 are
 all
@@ -820,7 +813,7 @@ the
 path
 to
 designate
-hierarchy.
+hierarchy
 this
 is
 a
@@ -832,7 +825,7 @@ this
 is
 my
 ip-address
-192.168.255.255.
+192.168.255.255
 in
 the
 late
@@ -878,7 +871,7 @@ or
 in
 the
 middle
-position.
+position
 as
 it
 had
@@ -917,7 +910,7 @@ and
 410
 in
 eastern
-maryland.
+maryland
 therefore
 someone
 calling
@@ -954,7 +947,7 @@ in
 the
 san
 jose
-area.
+area
 the
 country
 calling
@@ -963,7 +956,7 @@ for
 the
 nanp
 is
-1.
++1
 in
 international
 format
@@ -974,7 +967,7 @@ should
 be
 listed
 thus
-13015550100
++13015550100
 example
 using
 the
@@ -983,7 +976,6 @@ area
 code
 for
 maryland
-.
 the
 trunk
 prefix
@@ -996,7 +988,7 @@ the
 nanp
 is
 also
-1.
+1
 each
 three-digit
 area
@@ -1005,9 +997,7 @@ may
 contain
 up
 to
-7
-919
-900
+7,919,900
 unique
 phone
 numbers
@@ -1032,7 +1022,6 @@ x
 100
 x
 10000
-.
 however
 the
 last
@@ -1050,7 +1039,7 @@ confusion
 with
 the
 n11
-codes.
+codes
 citation
 needed
 despite
@@ -1096,7 +1085,6 @@ information
 numbers
 subtract
 100
-.
 in
 individual
 geographic
@@ -1146,7 +1134,6 @@ nxx
 950
 and
 976
-.
 various
 office
 codes
@@ -1192,14 +1179,14 @@ exchange
 in
 the
 same
-region.
+region
 958-xxxx
 and
 959-xxxx
 are
 usually
 test
-numbers.
+numbers
 inserting
 0
 or
@@ -1241,7 +1228,7 @@ north
 american
 numbering
 plan
-expansion.
+expansion
 lists
 of
 exchanges
@@ -1267,7 +1254,7 @@ prefixes
 as
 deliberately
 not
-issued.
+issued
 customer
 care
 will
@@ -1279,7 +1266,7 @@ july
 for
 us
 independence
-day.
+day
 order
 status
 is
@@ -1301,7 +1288,6 @@ digit
 order
 number
 required
-.
 here
 are
 the
@@ -1311,15 +1297,18 @@ some
 common
 services
 standard
-query..........................................
-80/hour
+query
+$80
+hour
 advanced
-query.........................................
-100/hour
+query
+$100
+hour
 technician
 home
-visit................
-120/hour
+visit
+$120
+hour
 travel
 expenses
 the
@@ -1333,7 +1322,7 @@ are
 5
 or
 perhaps
-4.
+4
 or
 maybe
 3
@@ -1345,11 +1334,10 @@ are
 england's
 most
 important
-numbers.
+numbers
 hey
 you're
 crazy
---
 you
 can't
 say
@@ -1360,11 +1348,11 @@ can
 and
 i'll
 write
-em
+'em
 one
 after
 the
-other.
+other
 as
 they
 say
@@ -1378,7 +1366,7 @@ requests
 and
 we'll
 play
-em
+'em
 for
 ya
 what
@@ -1394,9 +1382,7 @@ six
 or
 more
 exactly
-18
-15
-34
+18:15:34
 in
 2016
 a.d.
@@ -1412,7 +1398,7 @@ b.c.
 i
 don't
 recall
-exactly.
+exactly
 at
 least
 it's
@@ -1422,7 +1408,7 @@ i'm
 pretty
 sure
 of
-that.
+that
 that's
 what
 i'd
@@ -1431,7 +1417,7 @@ a
 gaffe
 pardon
 my
-french.
+french
 how'd
 you
 tokenize
@@ -1471,7 +1457,6 @@ downloaded
 here
 file
 112313.doc
-.
 a
 financial
 report
@@ -1488,4 +1473,4 @@ is
 on
 the
 central
-server.
+server
