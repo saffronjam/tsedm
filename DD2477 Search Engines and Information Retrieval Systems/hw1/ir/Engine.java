@@ -8,16 +8,17 @@
 package ir;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.File;
 
 /**
- *  This is the main class for the search engine.
+ * This is the main class for the search engine.
  */
 public class Engine {
 
     /** The inverted index. */
     Index index = new HashedIndex();
-    //Index index = new PersistentHashedIndex();
+    // Index index = new PersistentHashedIndex();
 
     /** The indexer creating the search index. */
     Indexer indexer;
@@ -52,89 +53,86 @@ public class Engine {
     /** For persistent indexes, we might not need to do any indexing. */
     boolean is_indexing = true;
 
-
     /* ----------------------------------------------- */
 
-
-    /**  
-     *   Constructor. 
-     *   Indexes all chosen directories and files
+    /**
+     * Constructor.
+     * Indexes all chosen directories and files
      */
-    public Engine( String[] args ) {
-        decodeArgs( args );
-        indexer = new Indexer( index, kgIndex, patterns_file );
-        searcher = new Searcher( index, kgIndex );
-        gui = new SearchGUI( this );
+    public Engine(String[] args) {
+        decodeArgs(args);
+        indexer = new Indexer(index, kgIndex, patterns_file);
+        searcher = new Searcher(index, kgIndex);
+        gui = new SearchGUI(this);
         gui.init();
-        /* 
-         *   Calls the indexer to index the chosen directory structure.
-         *   Access to the index is synchronized since we don't want to 
-         *   search at the same time we're indexing new files (this might 
-         *   corrupt the index).
+        /*
+         * Calls the indexer to index the chosen directory structure.
+         * Access to the index is synchronized since we don't want to
+         * search at the same time we're indexing new files (this might
+         * corrupt the index).
          */
         if (is_indexing) {
-            synchronized ( indexLock ) {
-                gui.displayInfoText( "Indexing, please wait..." );
+            synchronized (indexLock) {
+                gui.displayInfoText("Indexing, please wait...");
                 long startTime = System.currentTimeMillis();
-                for ( int i=0; i<dirNames.size(); i++ ) {
-                    File dokDir = new File( dirNames.get( i ));
-                    indexer.processFiles( dokDir, is_indexing );
+                for (int i = 0; i < dirNames.size(); i++) {
+                    File dokDir = new File(dirNames.get(i));
+                    indexer.processFiles(dokDir, is_indexing);
                 }
                 long elapsedTime = System.currentTimeMillis() - startTime;
-                gui.displayInfoText( String.format( "Indexing done in %.1f seconds.", elapsedTime/1000.0 ));
+                gui.displayInfoText(String.format("Indexing done in %.1f seconds.", elapsedTime / 1000.0));
                 index.cleanup();
             }
         } else {
-            gui.displayInfoText( "Index is loaded from disk" );
+            gui.displayInfoText("Index is loaded from disk");
         }
     }
-
 
     /* ----------------------------------------------- */
 
     /**
-     *   Decodes the command line arguments.
+     * Decodes the command line arguments.
      */
-    private void decodeArgs( String[] args ) {
-        int i=0, j=0;
-        while ( i < args.length ) {
-            if ( "-d".equals( args[i] )) {
+    private void decodeArgs(String[] args) {
+
+        System.out.println(Arrays.toString(args));
+
+        int i = 0, j = 0;
+        while (i < args.length) {
+            if ("-d".equals(args[i])) {
                 i++;
-                if ( i < args.length ) {
-                    dirNames.add( args[i++] );
+                if (i < args.length) {
+                    dirNames.add(args[i++]);
                 }
-            } else if ( "-p".equals( args[i] )) {
+            } else if ("-p".equals(args[i])) {
                 i++;
-                if ( i < args.length ) {
+                if (i < args.length) {
                     patterns_file = args[i++];
                 }
-            } else if ( "-l".equals( args[i] )) {
+            } else if ("-l".equals(args[i])) {
                 i++;
-                if ( i < args.length ) {
+                if (i < args.length) {
                     pic_file = args[i++];
                 }
-            } else if ( "-r".equals( args[i] )) {
+            } else if ("-r".equals(args[i])) {
                 i++;
-                if ( i < args.length ) {
+                if (i < args.length) {
                     rank_file = args[i++];
                 }
-            } else if ( "-ni".equals( args[i] )) {
+            } else if ("-ni".equals(args[i])) {
                 i++;
                 is_indexing = false;
             } else {
-                System.err.println( "Unknown option: " + args[i] );
+                System.err.println("Unknown option: " + args[i]);
                 break;
             }
-        }                   
+        }
     }
-
 
     /* ----------------------------------------------- */
 
-
-    public static void main( String[] args ) {
-        Engine e = new Engine( args );
+    public static void main(String[] args) {
+        Engine e = new Engine(args);
     }
 
 }
-
