@@ -61,6 +61,8 @@ public class PersistentHashedIndex implements Index {
 
     public static final String BASE_DIR = "grade-b/";
 
+    public static final boolean DELETE_ON_START = false;
+
     /**
      * A helper class representing one entry in the dictionary hashtable.
      */
@@ -90,9 +92,11 @@ public class PersistentHashedIndex implements Index {
             var dataFilename = BASE_DIR + INDEXDIR + DATA_FNAME;
             var docInfoFilename = BASE_DIR + INDEXDIR + DOCINFO_FNAME;
 
-            new File(dictionaryFilename).delete();
-            new File(dataFilename).delete();
-            new File(docInfoFilename).delete();
+            if (DELETE_ON_START) {
+                new File(dictionaryFilename).delete();
+                new File(dataFilename).delete();
+                new File(docInfoFilename).delete();
+            }
 
             createFile(dictionaryFilename);
             createFile(dataFilename);

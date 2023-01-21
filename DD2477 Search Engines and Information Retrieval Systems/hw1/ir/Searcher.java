@@ -88,6 +88,10 @@ public class Searcher {
                 }
             }
             totalAnswer = answer;
+
+            if (totalAnswer.size() == 0) {
+                return totalAnswer;
+            }
         }
 
         return totalAnswer;
@@ -136,6 +140,10 @@ public class Searcher {
                 }
             }
             totalAnswer = answer;
+
+            if (totalAnswer.size() == 0) {
+                return totalAnswer;
+            }
         }
 
         return totalAnswer;

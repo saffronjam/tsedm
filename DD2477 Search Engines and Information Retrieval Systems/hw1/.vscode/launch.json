@@ -48,6 +48,19 @@
                 "-p",
                 "patterns.txt"
             ]
+        },
+        {
+            "type": "java",
+            "name": "No index",
+            "request": "launch",
+            "mainClass": "ir.Engine",
+            "projectName": "hw1_19c1385f",
+            "args": [
+                "-l",
+                "ir22.png",
+                "-p",
+                "patterns.txt"
+            ]
         }
     ]
 }
