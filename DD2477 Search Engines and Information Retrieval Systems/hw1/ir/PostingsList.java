@@ -8,6 +8,7 @@
 package ir;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.stream.Collectors;
 
@@ -15,9 +16,14 @@ public class PostingsList {
 
     /** The postings list */
     private ArrayList<PostingsEntry> list = new ArrayList<PostingsEntry>();
+    private HashMap<Integer, PostingsEntry> map = new HashMap<Integer, PostingsEntry>();
 
     public PostingsList() {
 
+    }
+
+    public PostingsList(PostingsList copy) {
+        list.addAll(copy.list);
     }
 
     /** Number of postings in this list. */
@@ -30,13 +36,22 @@ public class PostingsList {
         return list.get(i);
     }
 
-    public PostingsList add(PostingsEntry entry) {
-        var match = list.stream().anyMatch(t -> t.docID == entry.docID);
+    public void add(int docID, double score, int offset) {
+        var entry = map.get(docID);
 
-        if (!match) {
-            list.add(entry);
+        if (entry == null) {
+            // if entry did not exist, create a new one
+            var newEntry = new PostingsEntry(docID, score);
+            newEntry.offsets.add(offset);
+            list.add(newEntry);
+            map.put(docID, newEntry);
+        } else {
+            // if entry did exist, just add the offset
+            entry.offsets.add(offset);
         }
+    }
 
-        return this;
+    public void add(PostingsEntry entry) {
+        list.add(entry);
     }
 }

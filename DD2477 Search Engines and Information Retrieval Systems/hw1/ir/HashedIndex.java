@@ -27,7 +27,7 @@ public class HashedIndex implements Index {
             list = new PostingsList();
         }
 
-        list.add(new PostingsEntry(docID, 0));
+        list.add(docID, 0, offset);
 
         index.put(token, list);
     }
@@ -37,7 +37,10 @@ public class HashedIndex implements Index {
      * if the term is not in the index.
      */
     public PostingsList getPostings(String token) {
-        return index.get(token);
+        if (index.containsKey(token)) {
+            return index.get(token);
+        }
+        return new PostingsList();
     }
 
     /**
