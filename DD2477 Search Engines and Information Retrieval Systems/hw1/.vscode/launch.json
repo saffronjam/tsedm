@@ -33,6 +33,21 @@
                 "-p",
                 "patterns.txt"
             ]
+        },
+        {
+            "type": "java",
+            "name": "Mini",
+            "request": "launch",
+            "mainClass": "ir.Engine",
+            "projectName": "hw1_19c1385f",
+            "args": [
+                "-d",
+                "C:/Users/ownem/Downloads/davisWiki-mini",
+                "-l",
+                "ir22.png",
+                "-p",
+                "patterns.txt"
+            ]
         }
     ]
 }
