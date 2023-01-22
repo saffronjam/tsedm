@@ -8,7 +8,6 @@
 package ir;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  * Implements an inverted index as a Hashtable from words to PostingsLists.

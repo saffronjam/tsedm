@@ -8,7 +8,6 @@
 package ir;
 
 import java.io.*;
-import java.util.*;
 import java.nio.charset.*;
 
 
@@ -76,8 +75,8 @@ public class Indexer {
                             String token = tok.nextToken();
                             insertIntoIndex( docID, token, offset++ );
                         }
-                        index.docNames.put( docID, f.getPath() );
-                        index.docLengths.put( docID, offset );
+                        Index.docNames.put( docID, f.getPath() );
+                        Index.docLengths.put( docID, offset );
                         reader.close();
                     } catch ( IOException e ) {
                         System.err.println( "Warning: IOException during indexing." );

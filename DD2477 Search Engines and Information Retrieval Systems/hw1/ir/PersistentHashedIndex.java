@@ -9,10 +9,7 @@ package ir;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.nio.charset.*;
-import java.nio.file.Path;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
@@ -25,7 +22,7 @@ import java.nio.file.Path;
  *   main-memory HashMap. When all words are read, the index is committed
  *   to disk.
  */
-public class PersistentHashedIndex implements Index {
+public abstract class PersistentHashedIndex implements Index {
 
     /** The directory where the persistent index files are stored. */
     public static final String INDEXDIR = "index/";
@@ -59,9 +56,9 @@ public class PersistentHashedIndex implements Index {
 
     // ===================================================================
 
-    public static final String BASE_DIR = "grade-b/";
-
     public static final boolean DELETE_ON_START = false;
+
+    public String BASE_DIR;
 
     /**
      * A helper class representing one entry in the dictionary hashtable.
@@ -72,6 +69,10 @@ public class PersistentHashedIndex implements Index {
         public long verify;
         public long ptr;
         public int size;
+
+        public boolean valid() {
+            return !(verify == 0 && ptr == 0 && size == 0);
+        }
     }
 
     private static void createFile(String filename) throws IOException {
@@ -86,7 +87,9 @@ public class PersistentHashedIndex implements Index {
      * Constructor. Opens the dictionary file and the data file.
      * If these files don't exist, they will be created.
      */
-    public PersistentHashedIndex() {
+    public PersistentHashedIndex(String baseDir) {
+        this.BASE_DIR = baseDir;
+
         try {
             var dictionaryFilename = BASE_DIR + INDEXDIR + DICTIONARY_FNAME;
             var dataFilename = BASE_DIR + INDEXDIR + DATA_FNAME;
@@ -154,7 +157,28 @@ public class PersistentHashedIndex implements Index {
         }
     }
 
+    /**
+     * Reads the document names and document lengths from file, and
+     * put them in the appropriate data structures.
+     *
+     * @throws IOException { exception_description }
+     */
+    private void readDocInfo() throws IOException {
+        File file = new File(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
+        FileReader freader = new FileReader(file);
+        try (BufferedReader br = new BufferedReader(freader)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(";");
+                docNames.put(Integer.valueOf(data[0]), data[1]);
+                docLengths.put(Integer.valueOf(data[0]), Integer.valueOf(data[2]));
+            }
+        }
+        freader.close();
+    }
+
     // ==================================================================
+
     //
     // Reading and writing to the dictionary file.
 
@@ -206,111 +230,11 @@ public class PersistentHashedIndex implements Index {
         return null;
     }
 
-    // ==================================================================
-
-    /**
-     * Writes the document names and document lengths to file.
-     *
-     * @throws IOException { exception_description }
-     */
-    private void writeDocInfo() throws IOException {
-        FileOutputStream fout = new FileOutputStream(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        for (Map.Entry<Integer, String> entry : docNames.entrySet()) {
-            Integer key = entry.getKey();
-            String docInfoEntry = key + ";" + entry.getValue() + ";" + docLengths.get(key) + "\n";
-            fout.write(docInfoEntry.getBytes());
-        }
-        fout.close();
-    }
-
-    /**
-     * Reads the document names and document lengths from file, and
-     * put them in the appropriate data structures.
-     *
-     * @throws IOException { exception_description }
-     */
-    private void readDocInfo() throws IOException {
-        File file = new File(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        FileReader freader = new FileReader(file);
-        try (BufferedReader br = new BufferedReader(freader)) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(";");
-                docNames.put(new Integer(data[0]), data[1]);
-                docLengths.put(new Integer(data[0]), new Integer(data[2]));
-            }
-        }
-        freader.close();
-    }
-
-    // ==================================================================
-
-    /**
-     * Write the index to files.
-     */
-    public void writeIndex() {
-        int collisions = 0;
-        try {
-            // Write the 'docNames' and 'docLengths' hash maps to a file
-            writeDocInfo();
-
-            // Write the dictionary and the postings list
-
-            long dataPtr = 0;
-            for (var indexEntry : index.entrySet()) {
-
-                var token = indexEntry.getKey();
-                var postingsList = indexEntry.getValue();
-
-                // step 1: convert PostingsList to string
-                var stringBuilder = new StringBuilder();
-                for (int i = 0; i < postingsList.size(); i++) {
-                    stringBuilder
-                            .append(postingsList.get(i).docID)
-                            .append(';')
-                            .append(postingsList.get(i).score)
-                            .append(';')
-                            .append(Arrays.toString(postingsList.get(i).offsets.toArray()))
-                            .append("|");
-                }
-
-                var stringData = stringBuilder.toString();
-
-                // step 2: write to data to know ptr in dictionary
-                var bytesWritten = writeData(stringData, dataPtr);
-
-                // step 3: hash the token and check if we need to change place in dictionary
-                long hash = getHashLocation(token);
-                long verify = getHashVerify(token);
-                // verify is 0 since we have not written anything yet
-                int sq = 1;
-                while (isColliding(hash * Entry.BYTE_SIZE, 0)) {
-                    hash = (hash += sq) % TABLESIZE;
-                    collisions++;
-                    sq = sq * 2;
-                }
-
-                // step 4: write to dictionary with ptr from step 2
-                var entry = new Entry();
-                entry.ptr = dataPtr;
-                entry.verify = verify;
-                entry.size = bytesWritten;
-
-                writeEntry(entry, hash * Entry.BYTE_SIZE);
-
-                dataPtr += bytesWritten;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.err.println(collisions + " collisions.");
-    }
-
     /*
      * Return an ptr which is essentially an index to the dictionary created by
      * hashing the token
      */
-    private long getHashLocation(String token) {
+    protected long getHashLocation(String token) {
         long hashResult = 0;
         for (int i = 0; i < token.length(); i++) {
             // mod TABLESIZE to wrap our limit space (no index out of bounds)
@@ -319,7 +243,7 @@ public class PersistentHashedIndex implements Index {
         return hashResult;
     }
 
-    private long getHashVerify(String token) {
+    protected long getHashVerify(String token) {
         long hashResult = 0;
         for (int i = 0; i < token.length(); i++) {
             // mod TABLESIZE to wrap our limit space (no index out of bounds)
@@ -328,9 +252,9 @@ public class PersistentHashedIndex implements Index {
         return hashResult;
     }
 
-    private boolean isColliding(long ptr, long verify) {
+    protected boolean isColliding(long ptr, long verify) {
         var entry = readEntry(ptr);
-        var colliding = verify != entry.verify;
+        var colliding = verify != entry.verify && entry.verify != 0;
         return colliding;
     }
 
@@ -342,10 +266,16 @@ public class PersistentHashedIndex implements Index {
         // step 1: look up in dictionary to get ptr
         long hash = getHashLocation(token);
         long verify = getHashVerify(token);
+        int diff = 1;
         while (isColliding(hash * Entry.BYTE_SIZE, verify)) {
-            hash = (hash + 1) % TABLESIZE;
+            hash = (hash + diff) % TABLESIZE;
+            diff = diff * 2;
         }
         var entry = readEntry(hash * Entry.BYTE_SIZE);
+        if (!entry.valid()) {
+            return new PostingsList();
+        }
+
         var dataPtr = entry.ptr;
 
         // step 2: load data at ptr
@@ -378,26 +308,17 @@ public class PersistentHashedIndex implements Index {
     }
 
     /**
+     * Write the index to files.
+     */
+    public abstract void writeIndex();
+
+    /**
      * Inserts this token in the main-memory hashtable.
      */
-    public void insert(String token, int docID, int offset) {
-        var list = index.get(token);
-        if (list == null) {
-            list = new PostingsList();
-        }
-
-        list.add(docID, 0, offset);
-
-        index.put(token, list);
-    }
+    public abstract void insert(String token, int docID, int offset);
 
     /**
      * Write index to file after indexing is done.
      */
-    public void cleanup() {
-        System.err.println(index.keySet().size() + " unique words");
-        System.err.print("Writing index to disk...");
-        writeIndex();
-        System.err.println("done!");
-    }
+    public abstract void cleanup();
 }

@@ -9,9 +9,6 @@ package ir;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.util.Iterator;
-import java.nio.charset.*;
-import java.io.*;
 
 /**
  * A class for representing a query as a list of words, each of which has

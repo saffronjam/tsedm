@@ -9,7 +9,7 @@ package ir;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Collector;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 /**
@@ -56,8 +56,14 @@ public class Searcher {
         var queryPostingsList = new ArrayList<PostingsList>();
 
         // step 1: collect all posting list for individual terms
+
+        var queryTermSet = new HashSet<String>();
         for (var queryTerm : query.queryterm) {
-            queryPostingsList.add(index.getPostings(queryTerm.term));
+            queryTermSet.add(queryTerm.term);
+        }
+
+        for (var term : queryTermSet) {
+            queryPostingsList.add(index.getPostings(term));
         }
 
         if (queryPostingsList.size() == 0) {

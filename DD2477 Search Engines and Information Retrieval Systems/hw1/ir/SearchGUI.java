@@ -11,8 +11,6 @@ package ir;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.text.*;
-import javax.swing.event.*;
 import javax.swing.border.*;
 import java.util.*;
 import java.io.*;
@@ -304,7 +302,7 @@ public class SearchGUI extends JFrame {
         box = new JCheckBox[maxResultsToDisplay];
         int i;
         for ( i=0; i<results.size() && i<maxResultsToDisplay; i++ ) {
-            String description = i + ". " + displayableFileName( engine.index.docNames.get( results.get(i).docID ));
+            String description = i + ". " + displayableFileName( Index.docNames.get( results.get(i).docID ));
             if ( queryType == QueryType.RANKED_QUERY ) {
                 description += "   " + String.format( "%.5f", results.get(i).score );
             }

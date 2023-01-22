@@ -17,7 +17,7 @@ import java.io.File;
 public class Engine {
 
     /** The inverted index. */
-    Index index = new PersistentHashedIndex();
+    Index index = new PersistentNonScalableHashedIndex();
     // Index index = new PersistentHashedIndex();
 
     /** The indexer creating the search index. */
@@ -97,7 +97,8 @@ public class Engine {
 
         System.out.println(Arrays.toString(args));
 
-        int i = 0, j = 0;
+        int i = 0;
+        // int j = 0;
         while (i < args.length) {
             if ("-d".equals(args[i])) {
                 i++;

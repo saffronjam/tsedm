@@ -8,7 +8,6 @@
 package ir;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  *  Defines some common data structures and methods that all types of
