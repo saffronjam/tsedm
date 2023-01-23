@@ -116,14 +116,15 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
 
                 // step 3: hash the token and check if we need to change place in dictionary
                 var hash = getHashLocation(token);
-                var entryPtr = getFirstFreeDictSpace(hash * Entry.BYTE_SIZE);
+                var findResult = getFirstFreeDictSpace(hash * Entry.BYTE_SIZE);
+                collisions += findResult.collisions;
 
                 // step 4: write to dictionary with ptr from step 2
                 var entry = new Entry();
                 entry.ptr = dataPtr;
                 entry.size = bytesWritten;
 
-                writeEntry(entry, entryPtr);
+                writeEntry(entry, findResult.ptr);
 
                 dataPtr += bytesWritten;
             }

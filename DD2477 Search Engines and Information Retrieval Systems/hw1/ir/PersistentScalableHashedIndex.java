@@ -102,14 +102,15 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
                 // step 3: hash the token and check if we need to change place in dictionary
                 long hash = getHashLocation(token);
-                var entryPtr = getFirstFreeDictSpace(hash * Entry.BYTE_SIZE);
+                var findResult = getFirstFreeDictSpace(hash * Entry.BYTE_SIZE);
+                collisions += findResult.collisions;
 
                 // step 4: write to dictionary with ptr from step 2
                 var entry = new Entry();
                 entry.ptr = dataPtr;
                 entry.size = bytesWritten;
 
-                writeEntry(entry, entryPtr);
+                writeEntry(entry, findResult.ptr);
 
                 dataPtr += bytesWritten;
             }
@@ -288,13 +289,13 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 if (entry1 == null) {
                     // finally, we need to find a free place for this entry in out
 
-                    var freeDictPtr = getFirstFreeDictSpace(dictionaryOut, dictPtr2);
+                    var findResult = getFirstFreeDictSpace(dictionaryOut, dictPtr2);
 
                     var rawData = readData(data2, entry2.ptr, entry2.size);
                     var bytesWritten = writeData(dataOut, rawData, outPtr);
 
                     var outEntry = new Entry(outPtr, bytesWritten);
-                    writeEntry(dictionaryOut, outEntry, freeDictPtr);
+                    writeEntry(dictionaryOut, outEntry, findResult.ptr);
 
                     outPtr += bytesWritten;
                 }

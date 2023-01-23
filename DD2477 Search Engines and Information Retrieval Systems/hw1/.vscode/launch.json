@@ -58,10 +58,13 @@
             "mainClass": "ir.Engine",
             "projectName": "hw1_19c1385f",
             "args": [
+                "-d",
+                "./corpus/davisWiki",
                 "-l",
                 "ir22.png",
                 "-p",
-                "patterns.txt"
+                "patterns.txt",
+                "-ni"
             ]
         }
     ]

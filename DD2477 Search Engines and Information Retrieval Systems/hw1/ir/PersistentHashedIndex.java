@@ -306,7 +306,7 @@ public abstract class PersistentHashedIndex implements Index {
         }
 
         while (!dataToken.equals(token) && entry.valid()) {
-            readPtr = ((readPtr + diff) % TABLESIZE) * Entry.BYTE_SIZE;
+            readPtr = ((readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE * Entry.BYTE_SIZE);
             entry = readEntry(dictionaryFile, readPtr);
             dataToken = "";
             if (entry.valid()) {
@@ -326,22 +326,34 @@ public abstract class PersistentHashedIndex implements Index {
         return getEntryWithToken(dictionaryFile, dataFile, startPtr, token);
     }
 
-    protected long getFirstFreeDictSpace(RandomAccessFile dictionaryFile, long startPtr) {
+    public class DictResult {
+        public long ptr;
+        public int collisions;
+
+        public DictResult(long ptr, int collisions) {
+            this.ptr = ptr;
+            this.collisions = collisions;
+        }
+    }
+
+    protected DictResult getFirstFreeDictSpace(RandomAccessFile dictionaryFile, long startPtr) {
         int diff = 1;
         long readPtr = startPtr;
 
         var entry = readEntry(dictionaryFile, readPtr);
 
+        int noCollisions = 0;
         while (entry.valid()) {
-            readPtr = ((readPtr + diff) % TABLESIZE) * Entry.BYTE_SIZE;
+            readPtr = ((readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE * Entry.BYTE_SIZE);
             entry = readEntry(dictionaryFile, readPtr);
             diff *= 2;
+            noCollisions++;
         }
 
-        return readPtr;
+        return new DictResult(readPtr, noCollisions);
     }
 
-    protected long getFirstFreeDictSpace(long startPtr) {
+    protected DictResult getFirstFreeDictSpace(long startPtr) {
         return getFirstFreeDictSpace(dictionaryFile, startPtr);
     }
 
