@@ -15,9 +15,10 @@ public class PostingsList {
     /** The postings list */
     private ArrayList<PostingsEntry> list = new ArrayList<PostingsEntry>();
     private HashMap<Integer, PostingsEntry> map = new HashMap<Integer, PostingsEntry>();
+    private String token;
 
-    public PostingsList() {
-
+    public PostingsList(String token) {
+        this.token = token;
     }
 
     public PostingsList(PostingsList copy) {
@@ -32,6 +33,14 @@ public class PostingsList {
     /** Returns the ith posting. */
     public PostingsEntry get(int i) {
         return list.get(i);
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     /** Returns posting by docId. */
@@ -56,5 +65,6 @@ public class PostingsList {
 
     public void add(PostingsEntry entry) {
         list.add(entry);
+        map.put(entry.docID, entry);
     }
 }

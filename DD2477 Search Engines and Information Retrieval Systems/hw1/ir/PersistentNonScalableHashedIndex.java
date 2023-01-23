@@ -115,23 +115,15 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
                 var bytesWritten = writeData(stringData, dataPtr);
 
                 // step 3: hash the token and check if we need to change place in dictionary
-                long hash = getHashLocation(token);
-                long verify = getHashVerify(token);
-                // verify is 0 since we have not written anything yet
-                int diff = 1;
-                while (isColliding(hash * Entry.BYTE_SIZE, 0)) {
-                    hash = (hash += diff) % TABLESIZE;
-                    diff = diff * 2;
-                    collisions++;
-                }
+                var hash = getHashLocation(token);
+                var entryPtr = getFirstFreeDictSpace(hash * Entry.BYTE_SIZE);
 
                 // step 4: write to dictionary with ptr from step 2
                 var entry = new Entry();
                 entry.ptr = dataPtr;
-                entry.verify = verify;
                 entry.size = bytesWritten;
 
-                writeEntry(entry, hash * Entry.BYTE_SIZE);
+                writeEntry(entry, entryPtr);
 
                 dataPtr += bytesWritten;
             }
@@ -145,7 +137,7 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
     public void insert(String token, int docID, int offset) {
         var list = index.get(token);
         if (list == null) {
-            list = new PostingsList();
+            list = new PostingsList(token);
         }
 
         list.add(docID, 0, offset);

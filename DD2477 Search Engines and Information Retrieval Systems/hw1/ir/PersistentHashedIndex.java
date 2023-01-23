@@ -71,14 +71,22 @@ public abstract class PersistentHashedIndex implements Index {
      * A helper class representing one entry in the dictionary hashtable.
      */
     public class Entry {
-        public static final int BYTE_SIZE = 20;
+        public static final int BYTE_SIZE = 12;
 
-        public long verify;
         public long ptr;
         public int size;
 
+        public Entry() {
+
+        }
+
+        public Entry(long ptr, int size) {
+            this.ptr = ptr;
+            this.size = size;
+        }
+
         public boolean valid() {
-            return !(verify == 0 && ptr == 0 && size == 0);
+            return !(ptr == 0 && size == 0);
         }
     }
 
@@ -169,6 +177,35 @@ public abstract class PersistentHashedIndex implements Index {
     }
 
     /**
+     * Reads data from the data file
+     */
+    String readToken(RandomAccessFile file, long ptr) {
+        try {
+            file.seek(ptr);
+
+            var builder = new StringBuilder();
+
+            char ch = (char) file.read();
+            while (ch != ';') {
+                builder.append(ch);
+                ch = (char) file.read();
+            }
+
+            return builder.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Reads data from the data file
+     */
+    String readToken(long ptr) {
+        return readToken(dataFile, ptr);
+    }
+
+    /**
      * Writes the document names and document lengths to file.
      *
      * @throws IOException { exception_description }
@@ -198,12 +235,9 @@ public abstract class PersistentHashedIndex implements Index {
     protected void writeEntry(RandomAccessFile file, Entry entry, long ptr) {
         try {
             file.seek(ptr);
-            file.writeLong(entry.verify);
-
-            file.seek(ptr + 8);
             file.writeLong(entry.ptr);
 
-            file.seek(ptr + 16);
+            file.seek(ptr + 8);
             file.writeInt(entry.size);
 
         } catch (IOException ioException) {
@@ -225,12 +259,9 @@ public abstract class PersistentHashedIndex implements Index {
             var entry = new Entry();
 
             file.seek(ptr);
-            entry.verify = file.readLong();
-
-            file.seek(ptr + 8);
             entry.ptr = file.readLong();
 
-            file.seek(ptr + 16);
+            file.seek(ptr + 8);
             entry.size = file.readInt();
 
             return entry;
@@ -257,19 +288,59 @@ public abstract class PersistentHashedIndex implements Index {
         return hashResult;
     }
 
-    protected long getHashVerify(String token) {
-        long hashResult = 0;
-        for (int i = 0; i < token.length(); i++) {
-            // mod TABLESIZE to wrap our limit space (no index out of bounds)
-            hashResult = (37 * hashResult + token.charAt(i)) % TABLESIZE;
+    protected Entry getEntryWithToken(
+            RandomAccessFile dictionaryFile,
+            RandomAccessFile dataFile,
+            long startPtr,
+            String token) {
+
+        int diff = 1;
+        long readPtr = startPtr;
+
+        var entry = readEntry(dictionaryFile, startPtr);
+        var dataToken = "";
+        if (entry.valid()) {
+            dataToken = readToken(dataFile, entry.ptr);
         }
-        return hashResult;
+
+        while (!dataToken.equals(token) && entry.valid()) {
+            readPtr = (readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE;
+            entry = readEntry(dictionaryFile, readPtr);
+            dataToken = "";
+            if (entry.valid()) {
+                dataToken = readToken(dataFile, readPtr);
+            }
+            diff *= 2;
+        }
+
+        if (!entry.valid()) {
+            return null;
+        }
+
+        return entry;
     }
 
-    protected boolean isColliding(long ptr, long verify) {
-        var entry = readEntry(ptr);
-        var colliding = verify != entry.verify && entry.verify != 0;
-        return colliding;
+    protected Entry getEntryWithToken(long startPtr, String token) {
+        return getEntryWithToken(dictionaryFile, dataFile, startPtr, token);
+    }
+
+    protected long getFirstFreeDictSpace(RandomAccessFile dictionaryFile, long startPtr) {
+        int diff = 1;
+        long readPtr = startPtr;
+
+        var entry = readEntry(dictionaryFile, startPtr);
+
+        while (entry.valid()) {
+            readPtr = (readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE;
+            entry = readEntry(dictionaryFile, readPtr);
+            diff *= 2;
+        }
+
+        return readPtr;
+    }
+
+    protected long getFirstFreeDictSpace(long startPtr) {
+        return getFirstFreeDictSpace(dictionaryFile, startPtr);
     }
 
     /**
@@ -279,15 +350,10 @@ public abstract class PersistentHashedIndex implements Index {
     public PostingsList getPostings(String token) {
         // step 1: look up in dictionary to get ptr
         long hash = getHashLocation(token);
-        long verify = getHashVerify(token);
-        int diff = 1;
-        while (isColliding(hash * Entry.BYTE_SIZE, verify)) {
-            hash = (hash + diff) % TABLESIZE;
-            diff = diff * 2;
-        }
-        var entry = readEntry(hash * Entry.BYTE_SIZE);
-        if (!entry.valid()) {
-            return new PostingsList();
+
+        var entry = getEntryWithToken(hash * Entry.BYTE_SIZE, token);
+        if (entry == null) {
+            return new PostingsList("");
         }
 
         var dataPtr = entry.ptr;
@@ -302,9 +368,12 @@ public abstract class PersistentHashedIndex implements Index {
     }
 
     protected PostingsList parsePostingsList(String rawData) {
-        var postingsList = new PostingsList();
+        var intialSplit = rawData.split(";", 2);
 
-        var postingsListParts = rawData.split("\\|");
+        var token = intialSplit[0];
+        var postingsListParts = intialSplit[1].split("\\|");
+
+        var postingsList = new PostingsList(token);
 
         for (var postingsListPart : postingsListParts) {
             var postingsEntryParts = postingsListPart.split(";");
@@ -329,6 +398,11 @@ public abstract class PersistentHashedIndex implements Index {
 
     protected String marshallPostingsList(PostingsList postingsList) {
         var stringBuilder = new StringBuilder();
+
+        stringBuilder
+                .append(postingsList.getToken())
+                .append(';');
+
         for (int i = 0; i < postingsList.size(); i++) {
             stringBuilder
                     .append(postingsList.get(i).docID)
@@ -344,8 +418,13 @@ public abstract class PersistentHashedIndex implements Index {
         return stringData;
     }
 
+    protected String getPostingsListToken(String rawData) {
+        int delimIndex = rawData.indexOf(';');
+        return rawData.substring(0, delimIndex);
+    }
+
     protected PostingsList mergePostingsList(PostingsList postingsList1, PostingsList postingsList2) {
-        var merged = new PostingsList();
+        var merged = new PostingsList(postingsList1.getToken());
         for (int i = 0; i < postingsList1.size(); i++) {
             var entry1 = postingsList1.get(i);
             var entry2 = postingsList2.getByDocId(entry1.docID);

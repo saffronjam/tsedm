@@ -102,22 +102,14 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
                 // step 3: hash the token and check if we need to change place in dictionary
                 long hash = getHashLocation(token);
-                long verify = getHashVerify(token);
-                // verify is 0 since we have not written anything yet
-                int diff = 1;
-                while (isColliding(hash * Entry.BYTE_SIZE, 0)) {
-                    hash = (hash += diff) % TABLESIZE;
-                    diff = diff * 2;
-                    collisions++;
-                }
+                var entryPtr = getFirstFreeDictSpace(hash * Entry.BYTE_SIZE);
 
                 // step 4: write to dictionary with ptr from step 2
                 var entry = new Entry();
                 entry.ptr = dataPtr;
-                entry.verify = verify;
                 entry.size = bytesWritten;
 
-                writeEntry(entry, hash * Entry.BYTE_SIZE);
+                writeEntry(entry, entryPtr);
 
                 dataPtr += bytesWritten;
             }
@@ -167,7 +159,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
         var list = index.get(token);
         if (list == null) {
-            list = new PostingsList();
+            list = new PostingsList(token);
         }
 
         list.add(docID, 0, offset);
@@ -240,30 +232,20 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 if (!entry1.valid()) {
                     continue;
                 }
+                var token1 = readToken(data1, entry1.ptr);
 
                 // look up matching entry in the other dictionary, since the same hash function
                 // was used, it should be able to find it, though not necessarily in the same
                 // place due to collisions
-                var dictPtr2 = dictPtr1;
-                int diff = 1;
-                var entry2 = readEntry(dictionary2, dictPtr2);
-                while (entry1.verify != entry2.verify && entry2.valid()) {
-                    dictPtr2 = (dictPtr2 + diff) % TABLESIZE;
-                    entry2 = readEntry(dictionary2, dictPtr2);
-                    diff = diff * 2;
-                }
+                var entry2 = getEntryWithToken(dictionary2, data2, dictPtr1, token1);
 
-                if (!entry2.valid()) {
+                if (entry2 == null) {
                     // entry in first dictionary was not found in other dictionary,
                     // so no merging is required (only moving from dir1 -> outDir directly)
                     var rawData = readData(data1, entry1.ptr, entry1.size);
                     var bytesWritten = writeData(dataOut, rawData, outPtr);
 
-                    var outEntry = new Entry();
-                    outEntry.ptr = outPtr;
-                    outEntry.verify = entry1.verify;
-                    outEntry.size = bytesWritten;
-
+                    var outEntry = new Entry(outPtr, bytesWritten);
                     writeEntry(dictionaryOut, outEntry, dictPtr1);
 
                     outPtr += bytesWritten;
@@ -283,11 +265,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 var rawData = marshallPostingsList(postingsListMerged);
                 var bytesWritten = writeData(dataOut, rawData, outPtr);
 
-                var outEntry = new Entry();
-                outEntry.ptr = outPtr;
-                outEntry.verify = entry1.verify;
-                outEntry.size = bytesWritten;
-
+                var outEntry = new Entry(outPtr, bytesWritten);
                 writeEntry(dictionaryOut, outEntry, dictPtr1);
 
                 outPtr += bytesWritten;
@@ -299,40 +277,24 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 if (!entry2.valid()) {
                     continue;
                 }
+                var token2 = readToken(data2, entry2.ptr);
 
                 // now we only need to add any entry that is valid for entry2, but not entry1
                 // shared entries were already added in the previous step
-                var dictPtr1 = dictPtr2;
-                int diff = 1;
-                var entry1 = readEntry(dictionary1, dictPtr1);
-                while (entry2.verify != entry1.verify && entry1.valid()) {
-                    dictPtr1 = (dictPtr2 + diff) % TABLESIZE;
-                    entry1 = readEntry(dictionary1, dictPtr1);
-                    diff = diff * 2;
-                }
+                var entry1 = getEntryWithToken(dictionary1, data1, dictPtr2, token2);
 
                 // add only if entry2 is unique, otherwise it is already added in the previous
                 // loop
-                if (!entry1.valid()) {
+                if (entry1 == null) {
                     // finally, we need to find a free place for this entry in out
-                    var outPtrWrite = dictPtr2;
-                    diff = 1;
-                    var outEntryRead = readEntry(dictionaryOut, outPtrWrite);
-                    while (outEntryRead.valid()) {
-                        outPtrWrite = (dictPtr2 + diff) % TABLESIZE;
-                        outEntryRead = readEntry(dictionaryOut, outPtrWrite);
-                        diff = diff * 2;
-                    }
+
+                    var freeDictPtr = getFirstFreeDictSpace(dictionaryOut, dictPtr2);
 
                     var rawData = readData(data2, entry2.ptr, entry2.size);
-                    var bytesWritten = writeData(dataOut, rawData, outEntryRead.ptr);
+                    var bytesWritten = writeData(dataOut, rawData, outPtr);
 
-                    var outEntry = new Entry();
-                    outEntry.ptr = outPtr;
-                    outEntry.verify = entry2.verify;
-                    outEntry.size = bytesWritten;
-
-                    writeEntry(dictionaryOut, outEntry, outPtrWrite);
+                    var outEntry = new Entry(outPtr, bytesWritten);
+                    writeEntry(dictionaryOut, outEntry, freeDictPtr);
 
                     outPtr += bytesWritten;
                 }
@@ -402,35 +364,17 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                     System.out.println("invalid state 2");
                 }
             } else {
-                // TODO: docID 123 overwrite data and ptr = 0
-                // verify should be 275500
-                // find out why docID 123 overwrites and ptr = 0
+                var token = readToken(dataOut, entryOut.ptr);
                 var rawData = readData(dataOut, entryOut.ptr, entryOut.size);
                 var postingsList = parsePostingsList(rawData);
 
-                var dictPtr1 = dictPtr;
-                int diff = 1;
-                var entry1 = readEntry(dictionaryOut, dictPtr1);
-                while (entryOut.verify != entry1.verify && entry1.valid()) {
-                    dictPtr1 = (dictPtr + diff) % TABLESIZE;
-                    entry1 = readEntry(dictionaryOut, dictPtr1);
-                    diff = diff * 2;
-                }
-
+                var entry1 = getEntryWithToken(dictionary1, data1, dictPtr, token);
                 var postingsList1 = entry1.valid() ? parsePostingsList(readData(data1, entry1.ptr, entry1.size))
-                        : new PostingsList();
+                        : new PostingsList("");
 
-                var dictPtr2 = dictPtr;
-                diff = 1;
-                var entry2 = readEntry(dictionaryOut, dictPtr2);
-                while (entryOut.verify != entry2.verify && entry2.valid()) {
-                    dictPtr2 = (dictPtr + diff) % TABLESIZE;
-                    entry2 = readEntry(dictionaryOut, dictPtr2);
-                    diff = diff * 2;
-                }
-
+                var entry2 = getEntryWithToken(dictionary2, data2, dictPtr, token);
                 var postingsList2 = entry2.valid() ? parsePostingsList(readData(data2, entry2.ptr, entry2.size))
-                        : new PostingsList();
+                        : new PostingsList("");
 
                 for (int i = 0; i < postingsList.size(); i++) {
                     var postingsEntry = postingsList.get(i);

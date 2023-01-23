@@ -78,7 +78,7 @@ public class Searcher {
 
             int i = 0, j = 0;
 
-            var answer = new PostingsList();
+            var answer = new PostingsList(queryList.getToken());
             while (i < totalAnswer.size() && j < queryList.size()) {
                 var entry1 = totalAnswer.get(i);
                 var entry2 = queryList.get(j);
@@ -119,7 +119,7 @@ public class Searcher {
 
             int i = 0, j = 0;
 
-            var answer = new PostingsList();
+            var answer = new PostingsList(queryList.getToken());
             while (i < totalAnswer.size() && j < queryList.size()) {
                 var entry1 = totalAnswer.get(i);
                 var entry2 = queryList.get(j);

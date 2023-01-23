@@ -23,7 +23,7 @@ public class HashedIndex implements Index {
     public void insert(String token, int docID, int offset) {
         var list = index.get(token);
         if (list == null) {
-            list = new PostingsList();
+            list = new PostingsList("");
         }
 
         list.add(docID, 0, offset);
@@ -39,7 +39,7 @@ public class HashedIndex implements Index {
         if (index.containsKey(token)) {
             return index.get(token);
         }
-        return new PostingsList();
+        return new PostingsList("");
     }
 
     /**

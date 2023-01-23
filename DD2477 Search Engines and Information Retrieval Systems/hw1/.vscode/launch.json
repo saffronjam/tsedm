@@ -3,16 +3,18 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    "projectHome": "hw1_19c1385f",
+    "projectLaptop": "hw1_b63c6b4",
     "configurations": [
         {
             "type": "java",
             "name": "Big",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
-                "C:/Users/ownem/Downloads/davisWiki",
+                "./corpus/davisWiki",
                 "-l",
                 "ir22.png",
                 "-p",
@@ -24,10 +26,10 @@
             "name": "Small",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
-                "C:/Users/ownem/Downloads/davisWiki-small",
+                "./corpus/davisWiki-small",
                 "-l",
                 "ir22.png",
                 "-p",
@@ -39,10 +41,10 @@
             "name": "Mini",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
-                "C:/Users/ownem/Downloads/davisWiki-mini",
+                "./corpus/davisWiki-mini",
                 "-l",
                 "ir22.png",
                 "-p",
@@ -54,7 +56,7 @@
             "name": "No index",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-l",
                 "ir22.png",
