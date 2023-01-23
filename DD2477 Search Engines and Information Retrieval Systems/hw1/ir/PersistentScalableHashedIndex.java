@@ -10,7 +10,6 @@ package ir;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.Function;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
@@ -25,7 +24,7 @@ import java.util.function.Function;
  */
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
-    public static final int INSERT_THRESHOLD = 50000;
+    public static final long INSERT_THRESHOLD = 50000 * 35;
 
     public static final String BASE_DIR = "grade-a/";
 
@@ -84,18 +83,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 var postingsList = indexEntry.getValue();
 
                 // step 1: convert PostingsList to string
-                var stringBuilder = new StringBuilder();
-                for (int i = 0; i < postingsList.size(); i++) {
-                    stringBuilder
-                            .append(postingsList.get(i).docID)
-                            .append(';')
-                            .append(postingsList.get(i).score)
-                            .append(';')
-                            .append(Arrays.toString(postingsList.get(i).offsets.toArray()))
-                            .append("|");
-                }
-
-                var stringData = stringBuilder.toString();
+                var stringData = marshallPostingsList(postingsList);
 
                 // step 2: write to data to know ptr in dictionary
                 var bytesWritten = writeData(stringData, dataPtr);
@@ -224,82 +212,89 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             var dataOut = new RandomAccessFile(dataFnameOut, "rw");
             var docInfoOut = new RandomAccessFile(docInfoFnameOut, "rw");
 
-            // step 3: merge on a per-PostingsList basis
+            var end = Entry.BYTE_SIZE * TABLESIZE;
+            dictionaryOut.seek(end);
+            dictionaryOut.writeByte(0);
 
-            var outPtr = 0;
-            // read all entries from first file, all these will be unique
-            for (long dictPtr1 = 0; dictPtr1 < TABLESIZE * Entry.BYTE_SIZE; dictPtr1 += Entry.BYTE_SIZE) {
-                var entry1 = readEntry(dictionary1, dictPtr1);
-                if (!entry1.valid()) {
-                    continue;
-                }
-                var token1 = readToken(data1, entry1.ptr);
+            var onlyVerify = false;
+            if (!onlyVerify) {
 
-                // look up matching entry in the other dictionary, since the same hash function
-                // was used, it should be able to find it, though not necessarily in the same
-                // place due to collisions
-                var entry2 = getEntryWithToken(dictionary2, data2, dictPtr1, token1);
+                // step 3: merge on a per-PostingsList basis
+                var outPtr = 0;
+                // read all entries from first file, all these will be unique
+                for (long dictPtr1 = 0; dictPtr1 < TABLESIZE * Entry.BYTE_SIZE; dictPtr1 += Entry.BYTE_SIZE) {
+                    var entry1 = readEntry(dictionary1, dictPtr1);
+                    if (!entry1.valid()) {
+                        continue;
+                    }
+                    var token1 = readToken(data1, entry1.ptr);
+                    var startPtr = getHashLocation(token1) * Entry.BYTE_SIZE;
 
-                if (entry2 == null) {
-                    // entry in first dictionary was not found in other dictionary,
-                    // so no merging is required (only moving from dir1 -> outDir directly)
-                    var rawData = readData(data1, entry1.ptr, entry1.size);
+                    // look up matching entry in the other dictionary, since the same hash function
+                    // was used, it should be able to find it, though not necessarily in the same
+                    // place due to collisions
+                    var entry2 = getEntryWithToken(dictionary2, data2, startPtr, token1);
+
+                    if (entry2 == null) {
+                        // entry in first dictionary was not found in other dictionary,
+                        // so no merging is required (only moving from dir1 -> outDir directly)
+                        var rawData = readData(data1, entry1.ptr, entry1.size);
+                        var bytesWritten = writeData(dataOut, rawData, outPtr);
+
+                        var outEntry = new Entry(outPtr, bytesWritten);
+                        writeEntry(dictionaryOut, outEntry, dictPtr1);
+
+                        outPtr += bytesWritten;
+
+                        continue;
+                    }
+
+                    // otherwise we need to merge PostingsLists, since they both contain an entry
+                    // for a word
+                    var rawData1 = readData(data1, entry1.ptr, entry1.size);
+                    var rawData2 = readData(data2, entry2.ptr, entry2.size);
+
+                    var postingsList1 = parsePostingsList(rawData1);
+                    var postingsList2 = parsePostingsList(rawData2);
+                    var postingsListMerged = mergePostingsList(postingsList1, postingsList2);
+
+                    var rawData = marshallPostingsList(postingsListMerged);
                     var bytesWritten = writeData(dataOut, rawData, outPtr);
 
                     var outEntry = new Entry(outPtr, bytesWritten);
                     writeEntry(dictionaryOut, outEntry, dictPtr1);
 
                     outPtr += bytesWritten;
-
-                    continue;
                 }
 
-                // otherwise we need to merge PostingsLists, since they both contain an entry
-                // for a word
-                var rawData1 = readData(data1, entry1.ptr, entry1.size);
-                var rawData2 = readData(data2, entry2.ptr, entry2.size);
+                // read all entries from second file, might not be all unique
+                for (long dictPtr2 = 0; dictPtr2 < TABLESIZE * Entry.BYTE_SIZE; dictPtr2 += Entry.BYTE_SIZE) {
+                    var entry2 = readEntry(dictionary2, dictPtr2);
+                    if (!entry2.valid()) {
+                        continue;
+                    }
+                    var token2 = readToken(data2, entry2.ptr);
+                    var startPtr = getHashLocation(token2) * Entry.BYTE_SIZE;
 
-                var postingsList1 = parsePostingsList(rawData1);
-                var postingsList2 = parsePostingsList(rawData2);
-                var postingsListMerged = mergePostingsList(postingsList1, postingsList2);
+                    // now we only need to add any entry that is valid for entry2, but not entry1
+                    // shared entries were already added in the previous step
+                    var entry1 = getEntryWithToken(dictionary1, data1, startPtr, token2);
 
-                var rawData = marshallPostingsList(postingsListMerged);
-                var bytesWritten = writeData(dataOut, rawData, outPtr);
+                    // add only if entry2 is unique, otherwise it is already added in the previous
+                    // loop
+                    if (entry1 == null) {
+                        var rawData = readData(data2, entry2.ptr, entry2.size);
+                        var bytesWritten = writeData(dataOut, rawData, outPtr);
 
-                var outEntry = new Entry(outPtr, bytesWritten);
-                writeEntry(dictionaryOut, outEntry, dictPtr1);
+                        // finally, we need to find a free place for this entry in out
+                        var findResult = getFirstFreeDictSpace(dictionaryOut, dictPtr2);
+                        var outEntry = new Entry(outPtr, bytesWritten);
+                        writeEntry(dictionaryOut, outEntry, findResult.ptr);
 
-                outPtr += bytesWritten;
-            }
+                        outPtr += bytesWritten;
+                    }
 
-            // read all entries from second file, might not be all unique
-            for (long dictPtr2 = 0; dictPtr2 < TABLESIZE * Entry.BYTE_SIZE; dictPtr2 += Entry.BYTE_SIZE) {
-                var entry2 = readEntry(dictionary2, dictPtr2);
-                if (!entry2.valid()) {
-                    continue;
                 }
-                var token2 = readToken(data2, entry2.ptr);
-
-                // now we only need to add any entry that is valid for entry2, but not entry1
-                // shared entries were already added in the previous step
-                var entry1 = getEntryWithToken(dictionary1, data1, dictPtr2, token2);
-
-                // add only if entry2 is unique, otherwise it is already added in the previous
-                // loop
-                if (entry1 == null) {
-                    // finally, we need to find a free place for this entry in out
-
-                    var findResult = getFirstFreeDictSpace(dictionaryOut, dictPtr2);
-
-                    var rawData = readData(data2, entry2.ptr, entry2.size);
-                    var bytesWritten = writeData(dataOut, rawData, outPtr);
-
-                    var outEntry = new Entry(outPtr, bytesWritten);
-                    writeEntry(dictionaryOut, outEntry, findResult.ptr);
-
-                    outPtr += bytesWritten;
-                }
-
             }
 
             verify(dictionary1, dictionary2, dictionaryOut, data1, data2, dataOut);
@@ -355,31 +350,29 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             var entryOut = readEntry(dictionaryOut, dictPtr);
 
             if (!entryOut.valid()) {
-                var entry1 = readEntry(dictionary2, dictPtr);
-                if (entry1.valid()) {
-                    System.out.println("invalid state 1");
-                }
-
+                var entry1 = readEntry(dictionary1, dictPtr);
                 var entry2 = readEntry(dictionary2, dictPtr);
-                if (entry2.valid()) {
-                    System.out.println("invalid state 2");
+                if (entry1.valid() && entry2.valid()) {
+                    System.out.println("invalid state validity");
                 }
             } else {
                 var token = readToken(dataOut, entryOut.ptr);
+                var startPointer = getHashLocation(token) * Entry.BYTE_SIZE;
                 var rawData = readData(dataOut, entryOut.ptr, entryOut.size);
                 var postingsList = parsePostingsList(rawData);
 
-                var entry1 = getEntryWithToken(dictionary1, data1, dictPtr, token);
-                var postingsList1 = entry1.valid() ? parsePostingsList(readData(data1, entry1.ptr, entry1.size))
+                var entry1 = getEntryWithToken(dictionary1, data1, startPointer, token);
+                var postingsList1 = entry1 != null ? parsePostingsList(readData(data1, entry1.ptr, entry1.size))
                         : new PostingsList("");
 
-                var entry2 = getEntryWithToken(dictionary2, data2, dictPtr, token);
-                var postingsList2 = entry2.valid() ? parsePostingsList(readData(data2, entry2.ptr, entry2.size))
+                var entry2 = getEntryWithToken(dictionary2, data2, startPointer, token);
+                var postingsList2 = entry2 != null ? parsePostingsList(readData(data2, entry2.ptr, entry2.size))
                         : new PostingsList("");
 
                 for (int i = 0; i < postingsList.size(); i++) {
                     var postingsEntry = postingsList.get(i);
 
+                    // docId 104 offset 2997
                     var postingsEntry1 = postingsList1.getByDocId(postingsEntry.docID);
                     var postingsEntry2 = postingsList2.getByDocId(postingsEntry.docID);
 
@@ -388,15 +381,19 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                     }
 
                     var allOffsets = new ArrayList<Integer>();
-                    allOffsets.addAll(postingsEntry1.offsets);
-                    allOffsets.addAll(postingsEntry2.offsets);
+                    if (postingsEntry1 != null) {
+                        allOffsets.addAll(postingsEntry1.offsets);
+                    }
+                    if (postingsEntry2 != null) {
+                        allOffsets.addAll(postingsEntry2.offsets);
+                    }
 
                     if (allOffsets.size() != postingsEntry.offsets.size()) {
                         System.out.println("invalid state offset size");
                     }
 
                     for (int j = 0; j < allOffsets.size(); j++) {
-                        if (allOffsets.get(j) != postingsEntry.offsets.get(j)) {
+                        if (!allOffsets.get(j).equals(postingsEntry.offsets.get(j))) {
                             System.out.println("invalid state offset value");
                         }
                     }
@@ -404,5 +401,6 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             }
 
         }
+        System.out.println("verification complete");
     }
 }

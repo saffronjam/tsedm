@@ -183,15 +183,24 @@ public abstract class PersistentHashedIndex implements Index {
         try {
             file.seek(ptr);
 
-            var builder = new StringBuilder();
-
-            char ch = (char) file.read();
-            while (ch != ';') {
-                builder.append(ch);
+            int iterations = 0;
+            var ch = ' ';
+            while (ch != '|') {
                 ch = (char) file.read();
+
+                if (iterations++ > 1000) {
+                    file.seek(ptr);
+                    var exitContent = file.readUTF();
+                    throw new IOException("failed to read token from file. actual content: " + exitContent);
+                }
             }
 
-            return builder.toString();
+            file.seek(ptr);
+
+            var data = new byte[iterations - 1];
+            file.read(data, 0, iterations - 1);
+
+            return new String(data);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -310,7 +319,7 @@ public abstract class PersistentHashedIndex implements Index {
             entry = readEntry(dictionaryFile, readPtr);
             dataToken = "";
             if (entry.valid()) {
-                dataToken = readToken(dataFile, readPtr);
+                dataToken = readToken(dataFile, entry.ptr);
             }
             diff *= 2;
         }
@@ -382,7 +391,7 @@ public abstract class PersistentHashedIndex implements Index {
     }
 
     protected PostingsList parsePostingsList(String rawData) {
-        var intialSplit = rawData.split(";", 2);
+        var intialSplit = rawData.split("\\|\\|", 2);
 
         var token = intialSplit[0];
         var postingsListParts = intialSplit[1].split("\\|");
@@ -415,7 +424,7 @@ public abstract class PersistentHashedIndex implements Index {
 
         stringBuilder
                 .append(postingsList.getToken())
-                .append(';');
+                .append("||");
 
         for (int i = 0; i < postingsList.size(); i++) {
             stringBuilder
@@ -454,7 +463,7 @@ public abstract class PersistentHashedIndex implements Index {
 
         for (int i = 0; i < postingsList2.size(); i++) {
             var entry2 = postingsList2.get(i);
-            if (merged.getByDocId(i) == null) {
+            if (merged.getByDocId(entry2.docID) == null) {
                 merged.add(entry2);
             }
         }
