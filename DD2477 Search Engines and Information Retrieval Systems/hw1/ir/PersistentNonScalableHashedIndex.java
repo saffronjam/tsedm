@@ -27,16 +27,46 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
 
     public PersistentNonScalableHashedIndex() {
         super(BASE_DIR);
+
+        try {
+            var dictionaryFilename = BASE_DIR + INDEXDIR + DICTIONARY_FNAME;
+            var dataFilename = BASE_DIR + INDEXDIR + DATA_FNAME;
+            var docInfoFilename = BASE_DIR + INDEXDIR + DOCINFO_FNAME;
+
+            if (DELETE_ON_START) {
+                new File(dictionaryFilename).delete();
+                new File(dataFilename).delete();
+                new File(docInfoFilename).delete();
+            }
+
+            createDirsAndFile(dictionaryFilename);
+            createDirsAndFile(dataFilename);
+            createDirsAndFile(docInfoFilename);
+
+            dictionaryFile = new RandomAccessFile(dictionaryFilename, "rw");
+            dataFile = new RandomAccessFile(dataFilename, "rw");
+
+            // write in the end to allocate the space that will be used
+            var end = Entry.BYTE_SIZE * TABLESIZE;
+            dictionaryFile.seek(end);
+            dictionaryFile.writeByte(0);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            readDocInfo();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // ==================================================================
 
-    /**
-     * Writes the document names and document lengths to file.
-     *
-     * @throws IOException { exception_description }
-     */
-    private void writeDocInfo() throws IOException {
+    @Override
+    protected void writeDocInfo() throws IOException {
         FileOutputStream fout = new FileOutputStream(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
         for (Map.Entry<Integer, String> entry : docNames.entrySet()) {
             Integer key = entry.getKey();
@@ -44,6 +74,21 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
             fout.write(docInfoEntry.getBytes());
         }
         fout.close();
+    }
+
+    @Override
+    protected void readDocInfo() throws IOException {
+        File file = new File(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
+        FileReader freader = new FileReader(file);
+        try (BufferedReader br = new BufferedReader(freader)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(";");
+                docNames.put(Integer.valueOf(data[0]), data[1]);
+                docLengths.put(Integer.valueOf(data[0]), Integer.valueOf(data[2]));
+            }
+        }
+        freader.close();
     }
 
     // ==================================================================
@@ -64,18 +109,7 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
                 var postingsList = indexEntry.getValue();
 
                 // step 1: convert PostingsList to string
-                var stringBuilder = new StringBuilder();
-                for (int i = 0; i < postingsList.size(); i++) {
-                    stringBuilder
-                            .append(postingsList.get(i).docID)
-                            .append(';')
-                            .append(postingsList.get(i).score)
-                            .append(';')
-                            .append(Arrays.toString(postingsList.get(i).offsets.toArray()))
-                            .append("|");
-                }
-
-                var stringData = stringBuilder.toString();
+                var stringData = marshallPostingsList(postingsList);
 
                 // step 2: write to data to know ptr in dictionary
                 var bytesWritten = writeData(stringData, dataPtr);

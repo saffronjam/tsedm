@@ -8,6 +8,12 @@
 package ir;
 
 import java.io.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,24 +47,25 @@ public abstract class PersistentHashedIndex implements Index {
 
     /** The dictionary hash table on disk can fit this many entries. */
     public static final long TABLESIZE = 611953L;
+    // public static final long TABLESIZE = 611953L;
 
     /** The dictionary hash table is stored in this file. */
-    RandomAccessFile dictionaryFile;
+    protected RandomAccessFile dictionaryFile;
 
     /** The data (the PostingsLists) are stored in this file. */
-    RandomAccessFile dataFile;
+    protected RandomAccessFile dataFile;
 
     /** Pointer to the first free memory cell in the data file. */
-    long free = 0L;
+    protected long free = 0L;
 
     /** The cache as a main-memory hash map. */
-    HashMap<String, PostingsList> index = new HashMap<String, PostingsList>();
+    protected HashMap<String, PostingsList> index = new HashMap<String, PostingsList>();
 
     // ===================================================================
 
     public static final boolean DELETE_ON_START = false;
 
-    public String BASE_DIR;
+    protected String BASE_DIR;
 
     /**
      * A helper class representing one entry in the dictionary hashtable.
@@ -75,10 +82,31 @@ public abstract class PersistentHashedIndex implements Index {
         }
     }
 
-    private static void createFile(String filename) throws IOException {
+    protected static void createDirsAndFile(String filename) throws IOException {
         var file = new File(filename);
         file.getParentFile().mkdirs();
         file.createNewFile();
+    }
+
+    protected static void deleteDir(String dir) throws IOException {
+        Path directory = Paths.get(dir);
+
+        if (Files.exists(directory)) {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes)
+                        throws IOException {
+                    Files.delete(path);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path directory, IOException ioException) throws IOException {
+                    Files.delete(directory);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
     }
 
     // ==================================================================
@@ -90,38 +118,22 @@ public abstract class PersistentHashedIndex implements Index {
     public PersistentHashedIndex(String baseDir) {
         this.BASE_DIR = baseDir;
 
+    }
+
+    /**
+     * Writes data to the data file at a specified place.
+     *
+     * @return The number of bytes written.
+     */
+    int writeData(RandomAccessFile file, String dataString, long ptr) {
         try {
-            var dictionaryFilename = BASE_DIR + INDEXDIR + DICTIONARY_FNAME;
-            var dataFilename = BASE_DIR + INDEXDIR + DATA_FNAME;
-            var docInfoFilename = BASE_DIR + INDEXDIR + DOCINFO_FNAME;
-
-            if (DELETE_ON_START) {
-                new File(dictionaryFilename).delete();
-                new File(dataFilename).delete();
-                new File(docInfoFilename).delete();
-            }
-
-            createFile(dictionaryFilename);
-            createFile(dataFilename);
-            createFile(docInfoFilename);
-
-            dictionaryFile = new RandomAccessFile(dictionaryFilename, "rw");
-            dataFile = new RandomAccessFile(dataFilename, "rw");
-
-            // write in the end to allocate the space that will be used
-            var end = Entry.BYTE_SIZE * TABLESIZE;
-            dictionaryFile.seek(end);
-            dictionaryFile.writeByte(0);
-
+            file.seek(ptr);
+            byte[] data = dataString.getBytes();
+            file.write(data);
+            return data.length;
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        try {
-            readDocInfo();
-        } catch (FileNotFoundException e) {
-        } catch (IOException e) {
-            e.printStackTrace();
+            return -1;
         }
     }
 
@@ -131,25 +143,17 @@ public abstract class PersistentHashedIndex implements Index {
      * @return The number of bytes written.
      */
     int writeData(String dataString, long ptr) {
-        try {
-            dataFile.seek(ptr);
-            byte[] data = dataString.getBytes();
-            dataFile.write(data);
-            return data.length;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        }
+        return writeData(dataFile, dataString, ptr);
     }
 
     /**
      * Reads data from the data file
      */
-    String readData(long ptr, int size) {
+    String readData(RandomAccessFile file, long ptr, int size) {
         try {
-            dataFile.seek(ptr);
+            file.seek(ptr);
             byte[] data = new byte[size];
-            dataFile.readFully(data);
+            file.readFully(data);
             return new String(data);
         } catch (IOException e) {
             e.printStackTrace();
@@ -158,24 +162,26 @@ public abstract class PersistentHashedIndex implements Index {
     }
 
     /**
+     * Reads data from the data file
+     */
+    String readData(long ptr, int size) {
+        return readData(dataFile, ptr, size);
+    }
+
+    /**
+     * Writes the document names and document lengths to file.
+     *
+     * @throws IOException { exception_description }
+     */
+    protected abstract void writeDocInfo() throws IOException;
+
+    /**
      * Reads the document names and document lengths from file, and
      * put them in the appropriate data structures.
      *
      * @throws IOException { exception_description }
      */
-    private void readDocInfo() throws IOException {
-        File file = new File(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        FileReader freader = new FileReader(file);
-        try (BufferedReader br = new BufferedReader(freader)) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(";");
-                docNames.put(Integer.valueOf(data[0]), data[1]);
-                docLengths.put(Integer.valueOf(data[0]), Integer.valueOf(data[2]));
-            }
-        }
-        freader.close();
-    }
+    protected abstract void readDocInfo() throws IOException;
 
     // ==================================================================
 
@@ -189,20 +195,24 @@ public abstract class PersistentHashedIndex implements Index {
      * 
      * @param ptr The place in the dictionary file to store the entry
      */
-    void writeEntry(Entry entry, long ptr) {
+    protected void writeEntry(RandomAccessFile file, Entry entry, long ptr) {
         try {
-            dictionaryFile.seek(ptr);
-            dictionaryFile.writeLong(entry.verify);
+            file.seek(ptr);
+            file.writeLong(entry.verify);
 
-            dictionaryFile.seek(ptr + 8);
-            dictionaryFile.writeLong(entry.ptr);
+            file.seek(ptr + 8);
+            file.writeLong(entry.ptr);
 
-            dictionaryFile.seek(ptr + 16);
-            dictionaryFile.writeInt(entry.size);
+            file.seek(ptr + 16);
+            file.writeInt(entry.size);
 
         } catch (IOException ioException) {
             System.err.println("failed to write entry: " + ioException.getMessage());
         }
+    }
+
+    protected void writeEntry(Entry entry, long ptr) {
+        writeEntry(dictionaryFile, entry, ptr);
     }
 
     /**
@@ -210,24 +220,28 @@ public abstract class PersistentHashedIndex implements Index {
      *
      * @param ptr The place in the dictionary file where to start reading.
      */
-    Entry readEntry(long ptr) {
+    protected Entry readEntry(RandomAccessFile file, long ptr) {
         try {
             var entry = new Entry();
 
-            dictionaryFile.seek(ptr);
-            entry.verify = dictionaryFile.readLong();
+            file.seek(ptr);
+            entry.verify = file.readLong();
 
-            dictionaryFile.seek(ptr + 8);
-            entry.ptr = dictionaryFile.readLong();
+            file.seek(ptr + 8);
+            entry.ptr = file.readLong();
 
-            dictionaryFile.seek(ptr + 16);
-            entry.size = dictionaryFile.readInt();
+            file.seek(ptr + 16);
+            entry.size = file.readInt();
 
             return entry;
         } catch (IOException ioException) {
             System.err.println("failed to read entry: " + ioException.getMessage());
         }
         return null;
+    }
+
+    protected Entry readEntry(long ptr) {
+        return readEntry(dictionaryFile, ptr);
     }
 
     /*
@@ -282,6 +296,12 @@ public abstract class PersistentHashedIndex implements Index {
         var rawData = readData(dataPtr, entry.size);
 
         // step 3: parse data into PostingsList
+        var postingsList = parsePostingsList(rawData);
+
+        return postingsList;
+    }
+
+    protected PostingsList parsePostingsList(String rawData) {
         var postingsList = new PostingsList();
 
         var postingsListParts = rawData.split("\\|");
@@ -305,6 +325,55 @@ public abstract class PersistentHashedIndex implements Index {
         }
 
         return postingsList;
+    }
+
+    protected String marshallPostingsList(PostingsList postingsList) {
+        var stringBuilder = new StringBuilder();
+        for (int i = 0; i < postingsList.size(); i++) {
+            stringBuilder
+                    .append(postingsList.get(i).docID)
+                    .append(';')
+                    .append(postingsList.get(i).score)
+                    .append(';')
+                    .append(Arrays.toString(postingsList.get(i).offsets.toArray()))
+                    .append("|");
+        }
+
+        var stringData = stringBuilder.toString();
+
+        return stringData;
+    }
+
+    protected PostingsList mergePostingsList(PostingsList postingsList1, PostingsList postingsList2) {
+        var merged = new PostingsList();
+        for (int i = 0; i < postingsList1.size(); i++) {
+            var entry1 = postingsList1.get(i);
+            var entry2 = postingsList2.getByDocId(entry1.docID);
+            if (entry2 == null) {
+                merged.add(entry1);
+                continue;
+            }
+
+            var mergedEntry = mergePostingsEntry(entry1, entry2);
+
+            merged.add(mergedEntry);
+        }
+
+        for (int i = 0; i < postingsList2.size(); i++) {
+            var entry2 = postingsList2.get(i);
+            if (merged.getByDocId(i) == null) {
+                merged.add(entry2);
+            }
+        }
+
+        return merged;
+    }
+
+    private PostingsEntry mergePostingsEntry(PostingsEntry postingsEntry1, PostingsEntry postingsEntry2) {
+        var merged = new PostingsEntry(postingsEntry1.docID, postingsEntry1.score);
+        merged.offsets.addAll(postingsEntry1.offsets);
+        merged.offsets.addAll(postingsEntry2.offsets);
+        return merged;
     }
 
     /**

@@ -34,6 +34,11 @@ public class PostingsList {
         return list.get(i);
     }
 
+    /** Returns posting by docId. */
+    public PostingsEntry getByDocId(int docId) {
+        return map.get(docId);
+    }
+
     public void add(int docID, double score, int offset) {
         var entry = map.get(docID);
 
