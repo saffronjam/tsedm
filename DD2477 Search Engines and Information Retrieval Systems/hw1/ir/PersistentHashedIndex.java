@@ -240,8 +240,9 @@ public abstract class PersistentHashedIndex implements Index {
             file.seek(ptr + 8);
             file.writeInt(entry.size);
 
-        } catch (IOException ioException) {
-            System.err.println("failed to write entry: " + ioException.getMessage());
+        } catch (IOException e) {
+            System.err.println("failed to write entry: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -265,10 +266,11 @@ public abstract class PersistentHashedIndex implements Index {
             entry.size = file.readInt();
 
             return entry;
-        } catch (IOException ioException) {
-            System.err.println("failed to read entry: " + ioException.getMessage());
+        } catch (IOException e) {
+            System.err.println("failed to read entry: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     protected Entry readEntry(long ptr) {
@@ -330,7 +332,7 @@ public abstract class PersistentHashedIndex implements Index {
 
         var entry = readEntry(dictionaryFile, startPtr);
 
-        while (entry.valid()) {
+        while (entry != null) {
             readPtr = (readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE;
             entry = readEntry(dictionaryFile, readPtr);
             diff *= 2;
@@ -351,7 +353,7 @@ public abstract class PersistentHashedIndex implements Index {
         // step 1: look up in dictionary to get ptr
         long hash = getHashLocation(token);
 
-        var entry = getEntryWithToken(hash * Entry.BYTE_SIZE, token);
+        var entry = getEntryWithToken((hash * Entry.BYTE_SIZE) % TABLESIZE, token);
         if (entry == null) {
             return new PostingsList("");
         }
