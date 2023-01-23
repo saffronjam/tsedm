@@ -306,7 +306,7 @@ public abstract class PersistentHashedIndex implements Index {
         }
 
         while (!dataToken.equals(token) && entry.valid()) {
-            readPtr = (readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE;
+            readPtr = ((readPtr + diff) % TABLESIZE) * Entry.BYTE_SIZE;
             entry = readEntry(dictionaryFile, readPtr);
             dataToken = "";
             if (entry.valid()) {
@@ -330,10 +330,10 @@ public abstract class PersistentHashedIndex implements Index {
         int diff = 1;
         long readPtr = startPtr;
 
-        var entry = readEntry(dictionaryFile, startPtr);
+        var entry = readEntry(dictionaryFile, readPtr);
 
-        while (entry != null) {
-            readPtr = (readPtr + diff * Entry.BYTE_SIZE) % TABLESIZE;
+        while (entry.valid()) {
+            readPtr = ((readPtr + diff) % TABLESIZE) * Entry.BYTE_SIZE;
             entry = readEntry(dictionaryFile, readPtr);
             diff *= 2;
         }
@@ -353,7 +353,7 @@ public abstract class PersistentHashedIndex implements Index {
         // step 1: look up in dictionary to get ptr
         long hash = getHashLocation(token);
 
-        var entry = getEntryWithToken((hash * Entry.BYTE_SIZE) % TABLESIZE, token);
+        var entry = getEntryWithToken(hash * Entry.BYTE_SIZE, token);
         if (entry == null) {
             return new PostingsList("");
         }
