@@ -157,11 +157,11 @@ public abstract class PersistentHashedIndex implements Index {
     /**
      * Reads data from the data file
      */
-    String readData(RandomAccessFile file, long ptr, int size) {
+    String readData(RandomAccessFile dataFile, long ptr, int size) {
         try {
-            file.seek(ptr);
+            dataFile.seek(ptr);
             byte[] data = new byte[size];
-            file.readFully(data);
+            dataFile.readFully(data);
             return new String(data);
         } catch (IOException e) {
             e.printStackTrace();
@@ -370,11 +370,11 @@ public abstract class PersistentHashedIndex implements Index {
      * Returns the postings for a specific term, or null
      * if the term is not in the index.
      */
-    public PostingsList getPostings(String token) {
+    public PostingsList getPostings(RandomAccessFile dictionaryFile, RandomAccessFile dataFile, String token) {
         // step 1: look up in dictionary to get ptr
         long hash = getHashLocation(token);
 
-        var entry = getEntryWithToken(hash * Entry.BYTE_SIZE, token);
+        var entry = getEntryWithToken(dictionaryFile, dataFile, hash * Entry.BYTE_SIZE, token);
         if (entry == null) {
             return new PostingsList("");
         }
@@ -382,12 +382,20 @@ public abstract class PersistentHashedIndex implements Index {
         var dataPtr = entry.ptr;
 
         // step 2: load data at ptr
-        var rawData = readData(dataPtr, entry.size);
+        var rawData = readData(dataFile, dataPtr, entry.size);
 
         // step 3: parse data into PostingsList
         var postingsList = parsePostingsList(rawData);
 
         return postingsList;
+    }
+
+    /**
+     * Returns the postings for a specific term, or null
+     * if the term is not in the index.
+     */
+    public PostingsList getPostings(String token) {
+        return getPostings(dictionaryFile, dataFile, token);
     }
 
     protected PostingsList parsePostingsList(String rawData) {

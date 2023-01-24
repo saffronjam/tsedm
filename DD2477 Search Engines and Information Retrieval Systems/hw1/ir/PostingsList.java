@@ -43,6 +43,10 @@ public class PostingsList {
         this.token = token;
     }
 
+    public HashMap<Integer, PostingsEntry> getMap() {
+        return map;
+    }
+
     /** Returns posting by docId. */
     public PostingsEntry getByDocId(int docId) {
         return map.get(docId);

@@ -10,6 +10,7 @@ package ir;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
@@ -111,39 +112,31 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
     @Override
     public void insert(String token, int docID, int offset) {
         if (insertCounter > INSERT_THRESHOLD) {
-            // write index to file then post job to worker
-            // wait if worker is currently merging
-            var folder = BASE_DIR + "intermediate/" + String.valueOf(insertBatchNumber) + "/";
-            setIndexDirectory(folder);
-            cleanup();
+            synchronized (readyForMerge) {
 
-            readyForMerge.add(folder);
+                // write index to file then post job to worker
+                // wait if worker is currently merging
+                var folder = BASE_DIR + "intermediate/" + String.valueOf(insertBatchNumber) + "/";
+                setIndexDirectory(folder);
+                cleanup();
 
-            insertBatchNumber++;
-            insertCounter = 0;
+                readyForMerge.add(folder);
 
-            if (readyForMerge.size() > 1) {
-                var dir1 = readyForMerge.get(0);
-                var dir2 = readyForMerge.get(1);
+                insertBatchNumber++;
+                insertCounter = 0;
 
-                readyForMerge.remove(0);
-                readyForMerge.remove(0);
+                if (readyForMerge.size() > 1) {
+                    var dir1 = readyForMerge.get(0);
+                    var dir2 = readyForMerge.get(1);
 
-                var outDirName = Paths.get(dir1).getFileName() + "-" + Paths.get(dir2).getFileName() + "/";
-                var outDir = BASE_DIR + "intermediate/" + outDirName;
+                    readyForMerge.remove(0);
+                    readyForMerge.remove(0);
 
-                // TEMPORARY if case, only send out one worker
-                if (insertBatchNumber == 2) {
-                    var worker = new Thread(() -> {
-                        mergerWorker(dir1, dir2, outDir, () -> {
+                    var outDir = getIntermediateOutDir(dir1, dir2);
 
-                        });
-                    });
-
-                    worker.start();
+                    deployWorker(dir1, dir2, outDir);
                 }
             }
-
         }
 
         var list = index.get(token);
@@ -178,6 +171,38 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
     interface WorkerHandler {
         public void onFinish();
+    }
+
+    private String getIntermediateOutDir(String dir1, String dir2) {
+        var outDirName = Paths.get(dir1).getFileName() + "-" + Paths.get(dir2).getFileName() + "/";
+        var outDir = BASE_DIR + "intermediate/" + outDirName;
+        return outDir;
+    }
+
+    private void deployWorker(String dir1, String dir2, String outDir) {
+        var worker = new Thread(() -> mergerWorker(dir1, dir2, outDir, () -> {
+            System.out.println("waiting");
+            synchronized (readyForMerge) {
+                System.out.println("in");
+                readyForMerge.add(outDir);
+
+                if (readyForMerge.size() > 1) {
+                    var dir1Next = readyForMerge.get(0);
+                    var dir2Next = readyForMerge.get(1);
+
+                    readyForMerge.remove(0);
+                    readyForMerge.remove(0);
+
+                    var outDirNext = getIntermediateOutDir(dir1Next, dir2Next);
+
+                    deployWorker(dir1Next, dir2Next, outDirNext);
+                }
+                System.out.println("out");
+            }
+            System.out.println("finished");
+        }));
+
+        worker.start();
     }
 
     private void mergerWorker(String dir1, String dir2, String outDir, WorkerHandler callback) {
@@ -287,7 +312,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                         var bytesWritten = writeData(dataOut, rawData, outPtr);
 
                         // finally, we need to find a free place for this entry in out
-                        var findResult = getFirstFreeDictSpace(dictionaryOut, dictPtr2);
+                        var findResult = getFirstFreeDictSpace(dictionaryOut, startPtr);
                         var outEntry = new Entry(outPtr, bytesWritten);
                         writeEntry(dictionaryOut, outEntry, findResult.ptr);
 
@@ -346,6 +371,73 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
     private void verify(RandomAccessFile dictionary1, RandomAccessFile dictionary2, RandomAccessFile dictionaryOut,
             RandomAccessFile data1, RandomAccessFile data2, RandomAccessFile dataOut) {
+
+        var uniqueTokens = new HashSet<String>();
+        var uniqueTokenMerged = new HashSet<String>();
+
+        for (long dictPtr = 0; dictPtr < TABLESIZE * Entry.BYTE_SIZE; dictPtr += Entry.BYTE_SIZE) {
+            var entry1 = readEntry(dictionary1, dictPtr);
+            if (entry1.valid()) {
+                var token1 = readToken(data1, entry1.ptr);
+                uniqueTokens.add(token1);
+
+                var startPointer = getHashLocation(token1) * Entry.BYTE_SIZE;
+                var rawData1 = readData(data1, entry1.ptr, entry1.size);
+                var postingsList1 = parsePostingsList(rawData1);
+
+                var entryOut = getEntryWithToken(dictionaryOut, dataOut, startPointer, token1);
+                var postingsListOut = entryOut != null
+                        ? parsePostingsList(readData(dataOut, entryOut.ptr, entryOut.size))
+                        : new PostingsList("");
+
+                for (int i = 0; i < postingsList1.size(); i++) {
+                    var postingsEntry1 = postingsList1.get(i);
+                    var postingsEntryOut = postingsListOut.getByDocId(postingsEntry1.docID);
+
+                    if (postingsEntryOut == null) {
+                        System.out.println("invalid state docId");
+                    }
+
+                    for (int j = 0; j < postingsEntry1.offsets.size(); j++) {
+                        if (!postingsEntryOut.offsets.contains(postingsEntry1.offsets.get(j))) {
+                            System.out.println("invalid state merged offsets");
+                        }
+                    }
+                }
+            }
+
+            var entry2 = readEntry(dictionary2, dictPtr);
+            if (entry2.valid()) {
+                var token2 = readToken(data2, entry2.ptr);
+                uniqueTokens.add(token2);
+
+                var startPointer = getHashLocation(token2) * Entry.BYTE_SIZE;
+                var rawData2 = readData(data2, entry2.ptr, entry2.size);
+                var postingsList2 = parsePostingsList(rawData2);
+
+                var entryOut = getEntryWithToken(dictionaryOut, dataOut, startPointer, token2);
+                var postingsListOut = entryOut != null
+                        ? parsePostingsList(readData(dataOut, entryOut.ptr, entryOut.size))
+                        : new PostingsList("");
+
+                for (int i = 0; i < postingsList2.size(); i++) {
+                    var postingsEntry2 = postingsList2.get(i);
+                    var postingsEntryOut = postingsListOut.getByDocId(postingsEntry2.docID);
+
+                    if (postingsEntryOut == null) {
+                        System.out.println("invalid state docId");
+                    }
+
+                    for (int j = 0; j < postingsEntry2.offsets.size(); j++) {
+                        if (!postingsEntryOut.offsets.contains(postingsEntry2.offsets.get(j))) {
+                            System.out.println("invalid state merged offsets");
+                        }
+                    }
+                }
+
+            }
+        }
+
         for (long dictPtr = 0; dictPtr < TABLESIZE * Entry.BYTE_SIZE; dictPtr += Entry.BYTE_SIZE) {
             var entryOut = readEntry(dictionaryOut, dictPtr);
 
@@ -357,6 +449,8 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 }
             } else {
                 var token = readToken(dataOut, entryOut.ptr);
+                uniqueTokenMerged.add(token);
+
                 var startPointer = getHashLocation(token) * Entry.BYTE_SIZE;
                 var rawData = readData(dataOut, entryOut.ptr, entryOut.size);
                 var postingsList = parsePostingsList(rawData);
@@ -372,7 +466,6 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 for (int i = 0; i < postingsList.size(); i++) {
                     var postingsEntry = postingsList.get(i);
 
-                    // docId 104 offset 2997
                     var postingsEntry1 = postingsList1.getByDocId(postingsEntry.docID);
                     var postingsEntry2 = postingsList2.getByDocId(postingsEntry.docID);
 
@@ -399,8 +492,31 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                     }
                 }
             }
-
         }
+
+        var intersect = new HashSet<String>(uniqueTokens);
+        intersect.retainAll(uniqueTokenMerged);
+        if (uniqueTokens.size() != uniqueTokenMerged.size() || intersect.size() != uniqueTokens.size()) {
+            System.out.println("invalid state unique words");
+        }
+
+        // 176922 unique words
+        for (var token : uniqueTokens) {
+            var postings1 = getPostings(dictionary1, data1, token);
+            var postings2 = getPostings(dictionary2, data2, token);
+            var postingsOut = getPostings(dictionaryOut, dataOut, token);
+
+            var keyMerged = new HashSet<Integer>(postings1.getMap().keySet());
+            keyMerged.addAll(postings2.getMap().keySet());
+
+            var matchesMerged = keyMerged.size();
+            var matchesOut = postingsOut.size();
+
+            if (matchesMerged != matchesOut){
+                System.out.println("invalid state matches");
+            }
+        }
+
         System.out.println("verification complete");
     }
 }
