@@ -10,7 +10,6 @@ package ir;
 import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
@@ -25,14 +24,18 @@ import java.util.concurrent.locks.Lock;
  */
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
-    public static final long INSERT_THRESHOLD = 50000 * 35;
+    public static final long INSERT_THRESHOLD = 15;
 
     public static final String BASE_DIR = "grade-a/";
 
     private int insertCounter = 0;
     private int insertBatchNumber = 0;
 
+    private boolean verifyMerges = false;
+    private boolean onlyVerify = false;
+
     private ArrayList<String> readyForMerge = new ArrayList<String>();
+    private ArrayList<Thread> threadPool = new ArrayList<>();
 
     public PersistentScalableHashedIndex() {
         super(BASE_DIR);
@@ -109,6 +112,11 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
         System.err.println(collisions + " collisions.");
     }
 
+    private String getIntermediateDirectoryName() {
+        var name = BASE_DIR + "intermediate/" + String.valueOf(insertBatchNumber) + "/";
+        return name;
+    }
+
     @Override
     public void insert(String token, int docID, int offset) {
         if (insertCounter > INSERT_THRESHOLD) {
@@ -116,11 +124,12 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
                 // write index to file then post job to worker
                 // wait if worker is currently merging
-                var folder = BASE_DIR + "intermediate/" + String.valueOf(insertBatchNumber) + "/";
-                setIndexDirectory(folder);
-                cleanup();
+                var directory = getIntermediateDirectoryName();
+                setIndexDirectory(directory);
+                writeIndex();
+                index = new HashMap<>();
 
-                readyForMerge.add(folder);
+                readyForMerge.add(directory);
 
                 insertBatchNumber++;
                 insertCounter = 0;
@@ -155,16 +164,57 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
     public void cleanup() {
         System.err.println(index.keySet().size() + " unique words");
         System.err.print("Writing index to disk...");
-        writeIndex();
+        // we can't forget the last one in memory
 
-        System.err.print("Resetting index and filepointsers");
-        index = new HashMap<>();
-        try {
-            dictionaryFile.close();
-            dataFile.close();
-        } catch (IOException io) {
-            io.printStackTrace();
+        synchronized (readyForMerge) {
+            var directory = getIntermediateDirectoryName();
+            setIndexDirectory(directory);
+            writeIndex();
+            index = new HashMap<>();
+
+            readyForMerge.add(directory);
+
+            if (readyForMerge.size() > 1) {
+                var dir1 = readyForMerge.get(0);
+                var dir2 = readyForMerge.get(1);
+
+                readyForMerge.remove(0);
+                readyForMerge.remove(0);
+
+                var outDir = getIntermediateOutDir(dir1, dir2);
+
+                deployWorker(dir1, dir2, outDir);
+            }
         }
+
+        // wait for treads to complete
+        boolean awaitedNoThread = false;
+        while (!awaitedNoThread) {
+            awaitedNoThread = true;
+            int size;
+            synchronized (threadPool) {
+                size = threadPool.size();
+            }
+            for (int i = 0; i < size; i++) {
+                var thread = threadPool.get(i);
+                try {
+                    if (thread.isAlive()) {
+                        awaitedNoThread = false;
+                        thread.join();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        threadPool.clear();
+
+        // then only one directory in intermediate should exist
+        // set it as output
+
+        var dirNames = new File(BASE_DIR + "intermediate/").list();
+        var indexDir = dirNames[0];
+        setIndexDirectory(BASE_DIR + "intermediate/" + indexDir + "/");
 
         System.err.println("done!");
     }
@@ -180,29 +230,31 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
     }
 
     private void deployWorker(String dir1, String dir2, String outDir) {
-        var worker = new Thread(() -> mergerWorker(dir1, dir2, outDir, () -> {
-            System.out.println("waiting");
-            synchronized (readyForMerge) {
-                System.out.println("in");
-                readyForMerge.add(outDir);
+        synchronized (threadPool) {
+            var worker = new Thread(() -> mergerWorker(dir1, dir2, outDir, () -> {
+                synchronized (readyForMerge) {
+                    System.out.println("worker finished with output: " + outDir);
+                    readyForMerge.add(outDir);
 
-                if (readyForMerge.size() > 1) {
-                    var dir1Next = readyForMerge.get(0);
-                    var dir2Next = readyForMerge.get(1);
+                    if (readyForMerge.size() > 1) {
+                        var dir1Next = readyForMerge.get(0);
+                        var dir2Next = readyForMerge.get(1);
 
-                    readyForMerge.remove(0);
-                    readyForMerge.remove(0);
+                        readyForMerge.remove(0);
+                        readyForMerge.remove(0);
 
-                    var outDirNext = getIntermediateOutDir(dir1Next, dir2Next);
+                        var outDirNext = getIntermediateOutDir(dir1Next, dir2Next);
 
-                    deployWorker(dir1Next, dir2Next, outDirNext);
+                        deployWorker(dir1Next, dir2Next, outDirNext);
+                    }
                 }
-                System.out.println("out");
-            }
-            System.out.println("finished");
-        }));
+            }));
 
-        worker.start();
+            threadPool.add(worker);
+
+            System.out.println("starting new worker, outputs to: " + outDir);
+            worker.start();
+        }
     }
 
     private void mergerWorker(String dir1, String dir2, String outDir, WorkerHandler callback) {
@@ -241,7 +293,6 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             dictionaryOut.seek(end);
             dictionaryOut.writeByte(0);
 
-            var onlyVerify = false;
             if (!onlyVerify) {
 
                 // step 3: merge on a per-PostingsList basis
@@ -322,7 +373,9 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 }
             }
 
-            verify(dictionary1, dictionary2, dictionaryOut, data1, data2, dataOut);
+            if (verifyMerges) {
+                verify(dictionary1, dictionary2, dictionaryOut, data1, data2, dataOut);
+            }
 
             // step 4: delete folder1 and folder2 since they are merged
             dictionary1.close();
@@ -500,7 +553,12 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             System.out.println("invalid state unique words");
         }
 
-        // 176922 unique words
+        // 176922 unique words - big
+
+        // 40611 unique words - small
+        // 42072 unqieu words - small MANY merges
+
+        // 38 unique words - mini
         for (var token : uniqueTokens) {
             var postings1 = getPostings(dictionary1, data1, token);
             var postings2 = getPostings(dictionary2, data2, token);
@@ -512,7 +570,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             var matchesMerged = keyMerged.size();
             var matchesOut = postingsOut.size();
 
-            if (matchesMerged != matchesOut){
+            if (matchesMerged != matchesOut) {
                 System.out.println("invalid state matches");
             }
         }

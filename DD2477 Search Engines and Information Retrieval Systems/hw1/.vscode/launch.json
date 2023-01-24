@@ -11,7 +11,7 @@
             "name": "Big",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
                 "./corpus/davisWiki",
@@ -26,7 +26,7 @@
             "name": "Small",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
                 "./corpus/davisWiki-small",
@@ -41,7 +41,7 @@
             "name": "Mini",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
                 "./corpus/davisWiki-mini",
@@ -56,7 +56,7 @@
             "name": "No index",
             "request": "launch",
             "mainClass": "ir.Engine",
-            "projectName": "hw1_19c1385f",
+            "projectName": "hw1_b63c6b4",
             "args": [
                 "-d",
                 "./corpus/davisWiki",
