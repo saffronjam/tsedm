@@ -24,7 +24,7 @@ import java.util.*;
  */
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
-    public static final long INSERT_THRESHOLD = 15;
+    public static final long INSERT_THRESHOLD = 2500000;
 
     public static final String BASE_DIR = "grade-a/";
 
@@ -38,6 +38,13 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
     public PersistentScalableHashedIndex() {
         super(BASE_DIR);
+
+        // load if we already have an index
+        var intermediateDirs = new File(BASE_DIR + "intermediate/").list();
+        if (intermediateDirs.length == 1) {
+            setIndexDirectory(BASE_DIR + "intermediate/" + intermediateDirs[0] + "/");
+            System.err.println("done!");
+        }
     }
 
     // ==================================================================
