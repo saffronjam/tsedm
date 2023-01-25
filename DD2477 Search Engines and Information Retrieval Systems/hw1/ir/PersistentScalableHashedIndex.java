@@ -25,10 +25,10 @@ import java.util.*;
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
     // big
-    // public static final long INSERT_THRESHOLD = 2500000;
+    public static final long INSERT_THRESHOLD = 2500000;
 
     // small
-    public static final long INSERT_THRESHOLD = 200000;
+    // public static final long INSERT_THRESHOLD = 200000;
 
     public static final String BASE_DIR = "grade-a/";
 
@@ -46,7 +46,12 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
         // load if we already have an index
         var intermediateDirs = new File(BASE_DIR + "intermediate/").list();
         if (intermediateDirs != null && intermediateDirs.length == 1) {
-            setIndexDirectory(BASE_DIR + "intermediate/" + intermediateDirs[0] + "/");
+            try {
+                setIndexDirectory(BASE_DIR + "intermediate/" + intermediateDirs[0] + "/");
+                readDocInfo(BASE_DIR + "intermediate/" + intermediateDirs[0] + "/");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             System.err.println("done!");
         }
     }
@@ -122,6 +127,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             var directory = getIntermediateDirectoryName();
             setIndexDirectory(directory);
             writeIndex();
+            closeIndexDirectory();
             index.clear();
             docNames.clear();
             docLengths.clear();
@@ -161,8 +167,13 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 // check if this was the final merge
                 var intermediateDirs = new File(BASE_DIR + "intermediate/").list();
                 if (intermediateDirs.length == 1) {
-                    setIndexDirectory(outDir);
-                    System.err.println("done!");
+                    try {
+                        setIndexDirectory(outDir);
+                        readDocInfo(outDir);
+                        System.err.println("done!");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 if (readyForMerge.size() > 1) {
@@ -299,6 +310,33 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
                 // step 5: merge docInfos
 
+                // only one document could be duplicates at any time, since we do one token a
+                // time
+                // so we check only the last vs first row
+                var lastLine = readLastLine(docInfo1, 1);
+                var firstLine = readFirstLine(docInfo2);
+
+                var lastLinePath = lastLine.split(";")[1];
+                var firstLinePath = firstLine.split(";")[1];
+
+                docInfo1.seek(0);
+                docInfo2.seek(0);
+                docInfoOut.seek(0);
+
+                for (var line = docInfo1.readLine(); line != null; line = docInfo1.readLine()) {
+                    docInfoOut.write(line.getBytes());
+                    docInfoOut.write(System.lineSeparator().getBytes());
+                }
+
+                if (lastLinePath.equals(firstLinePath)) {
+                    // skip first row
+                    docInfo2.readLine();
+                }
+
+                for (var line = docInfo2.readLine(); line != null; line = docInfo2.readLine()) {
+                    docInfoOut.write(line.getBytes());
+                    docInfoOut.write(System.lineSeparator().getBytes());
+                }
             }
 
             if (verifyMerges) {
@@ -345,6 +383,15 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             dictionaryFile.seek(end);
             dictionaryFile.writeByte(0);
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeIndexDirectory() {
+        try {
+            dictionaryFile.close();
+            dataFile.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -481,12 +528,6 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             System.out.println("invalid state unique words");
         }
 
-        // 176922 unique words - big
-
-        // 40611 unique words - small
-        // 42072 unqieu words - small MANY merges
-
-        // 38 unique words - mini
         for (var token : uniqueTokens) {
             var postings1 = getPostings(dictionary1, data1, token);
             var postings2 = getPostings(dictionary2, data2, token);

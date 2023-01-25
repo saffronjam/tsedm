@@ -514,6 +514,8 @@ public abstract class PersistentHashedIndex implements Index {
             }
         }
 
+        // sort entries to make the intersection algorithm work
+        merged.sortEntries();
         return merged;
     }
 
@@ -524,19 +526,45 @@ public abstract class PersistentHashedIndex implements Index {
         return merged;
     }
 
-    protected String getPathInDocInfo(RandomAccessFile file, String path) {
+    protected String readFirstLine(RandomAccessFile file) {
         try {
-            String row = "";
-            while (row != null) {
-                row = file.readLine();
-                if (row.equalsIgnoreCase(path)) {
-                    return row;
+            return file.readLine();
+        } catch (EOFException e) {
+            return "";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    protected String readLastLine(RandomAccessFile file, int extraNewLines) {
+        try {
+            var startPtr = file.length() - 1;
+            file.seek(startPtr);
+
+            int extraNewLinesCounter = 0;
+
+            int iterations = 0;
+            while (true) {
+                file.seek(startPtr - iterations);
+
+                char ch = (char) file.read();
+
+                if (ch == '\n') {
+                    extraNewLinesCounter++;
+                    if (extraNewLinesCounter > extraNewLines) {
+                        break;
+                    }
                 }
+
+                iterations++;
             }
 
-            return null;
-        } catch (IOException io) {
-            io.printStackTrace();
+            return file.readLine();
+        } catch (EOFException e) {
+            return "";
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }

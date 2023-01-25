@@ -71,4 +71,8 @@ public class PostingsList {
         list.add(entry);
         map.put(entry.docID, entry);
     }
+
+    public void sortEntries() {
+        list.sort((o1, o2) -> o1.docID - o2.docID);
+    }
 }
