@@ -96,7 +96,7 @@ public class Searcher {
             totalAnswer = answer;
 
             if (totalAnswer.size() == 0) {
-                return totalAnswer;
+                break;
             }
         }
 
@@ -148,7 +148,7 @@ public class Searcher {
             totalAnswer = answer;
 
             if (totalAnswer.size() == 0) {
-                return totalAnswer;
+                break;
             }
         }
 
