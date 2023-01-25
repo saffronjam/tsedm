@@ -24,7 +24,11 @@ import java.util.*;
  */
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
-    public static final long INSERT_THRESHOLD = 2500000;
+    // big
+    // public static final long INSERT_THRESHOLD = 2500000;
+
+    // small
+    public static final long INSERT_THRESHOLD = 200000;
 
     public static final String BASE_DIR = "grade-a/";
 
@@ -41,51 +45,20 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
         // load if we already have an index
         var intermediateDirs = new File(BASE_DIR + "intermediate/").list();
-        if (intermediateDirs.length == 1) {
+        if (intermediateDirs != null && intermediateDirs.length == 1) {
             setIndexDirectory(BASE_DIR + "intermediate/" + intermediateDirs[0] + "/");
             System.err.println("done!");
         }
     }
-
-    // ==================================================================
-
-    @Override
-    protected void readDocInfo() throws IOException {
-        File file = new File(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        FileReader freader = new FileReader(file);
-        try (BufferedReader br = new BufferedReader(freader)) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(";");
-                docNames.put(Integer.valueOf(data[0]), data[1]);
-                docLengths.put(Integer.valueOf(data[0]), Integer.valueOf(data[2]));
-            }
-        }
-        freader.close();
-    }
-
-    @Override
-    protected void writeDocInfo() throws IOException {
-        FileOutputStream fout = new FileOutputStream(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        for (Map.Entry<Integer, String> entry : docNames.entrySet()) {
-            Integer key = entry.getKey();
-            String docInfoEntry = key + ";" + entry.getValue() + ";" + docLengths.get(key) + "\n";
-            fout.write(docInfoEntry.getBytes());
-        }
-        fout.close();
-    }
-
-    // ==================================================================
 
     @Override
     public void writeIndex() {
         int collisions = 0;
         try {
             // Write the 'docNames' and 'docLengths' hash maps to a file
-            // writeDocInfo();
+            writeDocInfo(getIntermediateDirectoryName());
 
             // Write the dictionary and the postings list
-
             long dataPtr = 0;
             for (var indexEntry : index.entrySet()) {
 
@@ -104,9 +77,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 collisions += findResult.collisions;
 
                 // step 4: write to dictionary with ptr from step 2
-                var entry = new Entry();
-                entry.ptr = dataPtr;
-                entry.size = bytesWritten;
+                var entry = new Entry(dataPtr, bytesWritten);
 
                 writeEntry(entry, findResult.ptr);
 
@@ -151,7 +122,9 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             var directory = getIntermediateDirectoryName();
             setIndexDirectory(directory);
             writeIndex();
-            index = new HashMap<>();
+            index.clear();
+            docNames.clear();
+            docLengths.clear();
 
             readyForMerge.add(directory);
 
@@ -247,7 +220,6 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             dictionaryOut.writeByte(0);
 
             if (!onlyVerify) {
-
                 // step 3: merge on a per-PostingsList basis
                 var outPtr = 0;
                 // read all entries from first file, all these will be unique
@@ -324,13 +296,16 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                     }
 
                 }
+
+                // step 5: merge docInfos
+
             }
 
             if (verifyMerges) {
                 verify(dictionary1, dictionary2, dictionaryOut, data1, data2, dataOut);
             }
 
-            // step 4: delete folder1 and folder2 since they are merged
+            // step 5: delete folder1 and folder2 since they are merged
             dictionary1.close();
             data1.close();
             docInfo1.close();

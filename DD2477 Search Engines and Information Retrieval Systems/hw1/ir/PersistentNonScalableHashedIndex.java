@@ -63,36 +63,6 @@ public class PersistentNonScalableHashedIndex extends PersistentHashedIndex {
         }
     }
 
-    // ==================================================================
-
-    @Override
-    protected void writeDocInfo() throws IOException {
-        FileOutputStream fout = new FileOutputStream(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        for (Map.Entry<Integer, String> entry : docNames.entrySet()) {
-            Integer key = entry.getKey();
-            String docInfoEntry = key + ";" + entry.getValue() + ";" + docLengths.get(key) + "\n";
-            fout.write(docInfoEntry.getBytes());
-        }
-        fout.close();
-    }
-
-    @Override
-    protected void readDocInfo() throws IOException {
-        File file = new File(BASE_DIR + INDEXDIR + DOCINFO_FNAME);
-        FileReader freader = new FileReader(file);
-        try (BufferedReader br = new BufferedReader(freader)) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(";");
-                docNames.put(Integer.valueOf(data[0]), data[1]);
-                docLengths.put(Integer.valueOf(data[0]), Integer.valueOf(data[2]));
-            }
-        }
-        freader.close();
-    }
-
-    // ==================================================================
-
     @Override
     public void writeIndex() {
         int collisions = 0;

@@ -219,7 +219,24 @@ public abstract class PersistentHashedIndex implements Index {
      *
      * @throws IOException { exception_description }
      */
-    protected abstract void writeDocInfo() throws IOException;
+    protected void writeDocInfo(String dir) throws IOException {
+        FileOutputStream fout = new FileOutputStream(dir + DOCINFO_FNAME);
+        for (Map.Entry<Integer, String> entry : docNames.entrySet()) {
+            Integer key = entry.getKey();
+            String docInfoEntry = key + ";" + entry.getValue() + ";" + docLengths.get(key) + "\n";
+            fout.write(docInfoEntry.getBytes());
+        }
+        fout.close();
+    }
+
+    /**
+     * Writes the document names and document lengths to file.
+     *
+     * @throws IOException { exception_description }
+     */
+    protected void writeDocInfo() throws IOException {
+        writeDocInfo(BASE_DIR + INDEXDIR);
+    }
 
     /**
      * Reads the document names and document lengths from file, and
@@ -227,7 +244,28 @@ public abstract class PersistentHashedIndex implements Index {
      *
      * @throws IOException { exception_description }
      */
-    protected abstract void readDocInfo() throws IOException;
+    protected void readDocInfo(String dir) throws IOException {
+        FileReader freader = new FileReader(new File(dir + DOCINFO_FNAME));
+        try (BufferedReader br = new BufferedReader(freader)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(";");
+                docNames.put(Integer.valueOf(data[0]), data[1]);
+                docLengths.put(Integer.valueOf(data[0]), Integer.valueOf(data[2]));
+            }
+        }
+        freader.close();
+    }
+
+    /**
+     * Reads the document names and document lengths from file, and
+     * put them in the appropriate data structures.
+     *
+     * @throws IOException { exception_description }
+     */
+    protected void readDocInfo() throws IOException {
+        readDocInfo(BASE_DIR + INDEXDIR);
+    }
 
     // ==================================================================
 
@@ -484,6 +522,23 @@ public abstract class PersistentHashedIndex implements Index {
         merged.offsets.addAll(postingsEntry1.offsets);
         merged.offsets.addAll(postingsEntry2.offsets);
         return merged;
+    }
+
+    protected String getPathInDocInfo(RandomAccessFile file, String path) {
+        try {
+            String row = "";
+            while (row != null) {
+                row = file.readLine();
+                if (row.equalsIgnoreCase(path)) {
+                    return row;
+                }
+            }
+
+            return null;
+        } catch (IOException io) {
+            io.printStackTrace();
+            return null;
+        }
     }
 
     /**
