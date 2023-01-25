@@ -8,13 +8,28 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Huge",
+            "request": "launch",
+            "mainClass": "ir.Engine",
+            "projectName": "hw1_19c1385f",
+            "args": [
+                "-d",
+                "../corpus/guardian",
+                "-l",
+                "ir22.png",
+                "-p",
+                "patterns.txt"
+            ]
+        },
+        {
+            "type": "java",
             "name": "Big",
             "request": "launch",
             "mainClass": "ir.Engine",
             "projectName": "hw1_19c1385f",
             "args": [
                 "-d",
-                "./corpus/davisWiki",
+                "../corpus/davisWiki",
                 "-l",
                 "ir22.png",
                 "-p",
@@ -29,7 +44,7 @@
             "projectName": "hw1_19c1385f",
             "args": [
                 "-d",
-                "./corpus/davisWiki-small",
+                "../corpus/davisWiki-small",
                 "-l",
                 "ir22.png",
                 "-p",
@@ -44,7 +59,7 @@
             "projectName": "hw1_19c1385f",
             "args": [
                 "-d",
-                "./corpus/davisWiki-mini",
+                "../corpus/davisWiki-mini",
                 "-l",
                 "ir22.png",
                 "-p",
@@ -59,7 +74,7 @@
             "projectName": "hw1_19c1385f",
             "args": [
                 "-d",
-                "./corpus/davisWiki",
+                "../corpus/davisWiki",
                 "-l",
                 "ir22.png",
                 "-p",

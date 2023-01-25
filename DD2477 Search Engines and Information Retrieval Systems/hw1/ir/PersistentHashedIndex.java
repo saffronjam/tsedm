@@ -46,8 +46,11 @@ public abstract class PersistentHashedIndex implements Index {
     public static final String DOCINFO_FNAME = "docInfo";
 
     /** The dictionary hash table on disk can fit this many entries. */
+    // davis
     public static final long TABLESIZE = 611953L;
-    // public static final long TABLESIZE = 611953L;
+
+    // guardian
+    // public static final long TABLESIZE = 3500017L;
 
     /** The dictionary hash table is stored in this file. */
     protected RandomAccessFile dictionaryFile;
@@ -188,7 +191,8 @@ public abstract class PersistentHashedIndex implements Index {
             while (ch != '|') {
                 ch = (char) file.read();
 
-                if (iterations++ > 1000) {
+                // assume no token are bigger than 50000 characters
+                if (iterations++ > 50000) {
                     file.seek(ptr);
                     var exitContent = file.readUTF();
                     throw new IOException("failed to read token from file. actual content: " + exitContent);

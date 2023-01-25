@@ -8,7 +8,6 @@
 package ir;
 
 import java.io.*;
-import java.util.*;
 
 /*
  *   Implements an inverted index as a hashtable on disk.

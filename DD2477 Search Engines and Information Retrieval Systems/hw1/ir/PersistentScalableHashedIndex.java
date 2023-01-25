@@ -24,11 +24,14 @@ import java.util.*;
  */
 public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
+    // huge
+    // public static final long INSERT_THRESHOLD = 8500000;
+
     // big
-    public static final long INSERT_THRESHOLD = 2500000;
+    // public static final long INSERT_THRESHOLD = 2500000;
 
     // small
-    // public static final long INSERT_THRESHOLD = 200000;
+    public static final long INSERT_THRESHOLD = 200000;
 
     public static final String BASE_DIR = "grade-a/";
 
@@ -135,8 +138,8 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
             readyForMerge.add(directory);
 
             if (readyForMerge.size() > 1) {
-                var dir1 = readyForMerge.get(0);
-                var dir2 = readyForMerge.get(1);
+                var dir1 = readyForMerge.get(1);
+                var dir2 = readyForMerge.get(0);
 
                 readyForMerge.remove(0);
                 readyForMerge.remove(0);
@@ -177,8 +180,8 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 }
 
                 if (readyForMerge.size() > 1) {
-                    var dir1Next = readyForMerge.get(0);
-                    var dir2Next = readyForMerge.get(1);
+                    var dir1Next = readyForMerge.get(1);
+                    var dir2Next = readyForMerge.get(0);
 
                     readyForMerge.remove(0);
                     readyForMerge.remove(0);
@@ -309,33 +312,43 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
                 }
 
                 // step 5: merge docInfos
+                var line1 = docInfo1.readLine();
+                var line2 = docInfo2.readLine();
 
-                // only one document could be duplicates at any time, since we do one token a
-                // time
-                // so we check only the last vs first row
-                var lastLine = readLastLine(docInfo1, 1);
-                var firstLine = readFirstLine(docInfo2);
+                var lf = System.lineSeparator().getBytes();
 
-                var lastLinePath = lastLine.split(";")[1];
-                var firstLinePath = firstLine.split(";")[1];
+                while (true) {
+                    if (line1 == null && line2 == null) {
+                        break;
+                    }
 
-                docInfo1.seek(0);
-                docInfo2.seek(0);
-                docInfoOut.seek(0);
+                    if (line1 == null) {
+                        docInfoOut.write(line2.getBytes());
+                        docInfoOut.write(lf);
 
-                for (var line = docInfo1.readLine(); line != null; line = docInfo1.readLine()) {
-                    docInfoOut.write(line.getBytes());
-                    docInfoOut.write(System.lineSeparator().getBytes());
-                }
+                        line2 = docInfo2.readLine();
+                    } else if (line2 == null) {
+                        docInfoOut.write(line1.getBytes());
+                        docInfoOut.write(lf);
 
-                if (lastLinePath.equals(firstLinePath)) {
-                    // skip first row
-                    docInfo2.readLine();
-                }
+                        line1 = docInfo1.readLine();
+                    } else {
+                        var docId1 = Integer.valueOf(line1.split(";", 2)[0]);
+                        var docId2 = Integer.valueOf(line2.split(";", 2)[0]);
 
-                for (var line = docInfo2.readLine(); line != null; line = docInfo2.readLine()) {
-                    docInfoOut.write(line.getBytes());
-                    docInfoOut.write(System.lineSeparator().getBytes());
+                        if (docId1 <= docId2) {
+                            docInfoOut.write(line1.getBytes());
+                            docInfoOut.write(lf);
+
+                            line1 = docInfo1.readLine();
+                        } else {
+                            docInfoOut.write(line2.getBytes());
+                            docInfoOut.write(lf);
+
+                            line2 = docInfo2.readLine();
+                        }
+                    }
+
                 }
             }
 
