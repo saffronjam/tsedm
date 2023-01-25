@@ -8,7 +8,7 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Huge",
+            "name": "Guardian Big",
             "request": "launch",
             "mainClass": "ir.Engine",
             "projectName": "hw1_19c1385f",
@@ -19,6 +19,37 @@
                 "ir22.png",
                 "-p",
                 "patterns.txt"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Guardian Small",
+            "request": "launch",
+            "mainClass": "ir.Engine",
+            "projectName": "hw1_19c1385f",
+            "args": [
+                "-d",
+                "../corpus/guardian-small",
+                "-l",
+                "ir22.png",
+                "-p",
+                "patterns.txt"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Guardian No index",
+            "request": "launch",
+            "mainClass": "ir.Engine",
+            "projectName": "hw1_19c1385f",
+            "args": [
+                "-d",
+                "../corpus/guardian",
+                "-l",
+                "ir22.png",
+                "-p",
+                "patterns.txt",
+                "-ni"
             ]
         },
         {
