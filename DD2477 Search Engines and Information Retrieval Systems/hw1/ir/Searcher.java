@@ -173,31 +173,37 @@ public class Searcher {
         var answer = makeIntersectionQuery(p1, p2, (entry1, entry2) -> {
             var combined = new PostingsEntry(entry1.docID, 0);
 
-            var entry1SkipInterval = (int) Math.sqrt(entry1.offsets.size());
-            var entry2SkipInterval = (int) Math.sqrt(entry2.offsets.size());
+            var skipInterval1 = (int) Math.sqrt(entry1.offsets.size());
+            var skipInterval2 = (int) Math.sqrt(entry2.offsets.size());
 
-            for (int e1 = 0; e1 < entry1.offsets.size(); e1++) {
-                for (int e2 = 0; e2 < entry2.offsets.size(); e2++) {
-                    if (canSkipOffsets(e1, entry1SkipInterval, entry2.offsets.get(e2), entry1.offsets)) {
-                        e1 += entry1SkipInterval;
+            int i = 0, j = 0;
+            while (i < entry1.offsets.size() && j < entry2.offsets.size()) {
+                while (canSkipOffsets(i, skipInterval1, entry2.offsets.get(j), entry1.offsets)) {
+                    i += skipInterval1;
 
-                        noSkips++;
-                        skipDistance += entry1SkipInterval;
-                    }
+                    noSkips++;
+                    skipDistance += skipInterval1;
+                }
 
-                    if (canSkipOffsets(e2, entry2SkipInterval, entry1.offsets.get(e1), entry2.offsets)) {
-                        e2 += entry2SkipInterval;
+                while (canSkipOffsets(j, skipInterval2, entry1.offsets.get(i), entry2.offsets)) {
+                    j += skipInterval2;
 
-                        noSkips++;
-                        skipDistance += entry2SkipInterval;
-                    }
+                    noSkips++;
+                    skipDistance += skipInterval2;
+                }
 
-                    var offset1 = entry1.offsets.get(e1);
-                    var offset2 = entry2.offsets.get(e2);
+                var offset1 = entry1.offsets.get(i);
+                var offset2 = entry2.offsets.get(j);
 
-                    if (offset2 == offset1 + 1) {
-                        combined.offsets.add(offset2);
-                    }
+                if (offset2 == offset1 + 1) {
+                    combined.offsets.add(offset2);
+
+                    i++;
+                    j++;
+                } else if (offset1 < offset2) {
+                    i++;
+                } else {
+                    j++;
                 }
             }
 
@@ -226,6 +232,14 @@ public class Searcher {
             var entry1 = p1.get(i);
             var entry2 = p2.get(j);
 
+            while (canSkipDocuments(i, p1SkipInterval, entry2.docID, p1)) {
+                i += p1SkipInterval;
+            }
+
+            while (canSkipDocuments(j, p2SkipInterval, entry1.docID, p2)) {
+                j += p2SkipInterval;
+            }
+
             if (entry1.docID == entry2.docID) {
 
                 var result = handler.onMatch(entry1, entry2);
@@ -236,17 +250,9 @@ public class Searcher {
                 i++;
                 j++;
             } else if (entry1.docID < entry2.docID) {
-                if (canSkipDocuments(i, p1SkipInterval, entry1.docID, p1)) {
-                    i += p1SkipInterval;
-                } else {
-                    i++;
-                }
+                i++;
             } else {
-                if (canSkipDocuments(j, p2SkipInterval, entry1.docID, p2)) {
-                    j += p2SkipInterval;
-                } else {
-                    j++;
-                }
+                j++;
             }
         }
 
@@ -264,7 +270,7 @@ public class Searcher {
         }
 
         var offset1Skip = offsets.get(skipTo);
-        if (offset1Skip >= otherOffset) {
+        if (offset1Skip.intValue() >= otherOffset - 1) {
             return false;
         }
 
