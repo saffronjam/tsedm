@@ -188,7 +188,7 @@ public abstract class PersistentHashedIndex implements Index {
 
             int iterations = 0;
             var ch = ' ';
-            while (ch != '|') {
+            while (ch != ';') {
                 ch = (char) file.read();
 
                 // assume no token are bigger than 50000 characters
@@ -441,21 +441,20 @@ public abstract class PersistentHashedIndex implements Index {
     }
 
     protected PostingsList parsePostingsList(String rawData) {
-        var intialSplit = rawData.split("\\|\\|", 2);
+        var intialSplit = rawData.split(";", 2);
 
         var token = intialSplit[0];
-        var postingsListParts = intialSplit[1].split("\\|");
+        var parts = intialSplit[1].split(";");
 
         var postingsList = new PostingsList(token);
 
-        for (var postingsListPart : postingsListParts) {
-            var postingsEntryParts = postingsListPart.split(";");
+        for (int i = 0; i < parts.length; i += 3) {
 
             // docID, score, offset
-            var docID = Integer.valueOf(postingsEntryParts[0]);
-            var score = Double.valueOf(postingsEntryParts[1]);
+            var docID = Integer.valueOf(parts[i]);
+            var score = Double.valueOf(parts[i + 1]);
             var offsets = (ArrayList<Integer>) Arrays
-                    .asList(postingsEntryParts[2].replaceAll("\\[|\\]", "").split(", "))
+                    .asList(parts[i + 2].split(" "))
                     .stream()
                     .map(offset -> Integer.valueOf(offset))
                     .collect(Collectors.toList());
@@ -474,16 +473,21 @@ public abstract class PersistentHashedIndex implements Index {
 
         stringBuilder
                 .append(postingsList.getToken())
-                .append("||");
+                .append(";");
 
         for (int i = 0; i < postingsList.size(); i++) {
             stringBuilder
                     .append(postingsList.get(i).docID)
                     .append(';')
                     .append(postingsList.get(i).score)
-                    .append(';')
-                    .append(Arrays.toString(postingsList.get(i).offsets.toArray()))
-                    .append("|");
+                    .append(';');
+
+            var offsets = postingsList.get(i).offsets;
+            for (var offset : offsets) {
+                stringBuilder.append(offset).append(' ');
+            }
+            stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+            stringBuilder.append(";");
         }
 
         var stringData = stringBuilder.toString();
