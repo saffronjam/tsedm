@@ -59,34 +59,54 @@ public class Searcher {
     }
 
     private PostingsList intersectionQuery(Query query) {
-        var queryPostingsList = new ArrayList<PostingsList>();
+        var cache = new HashMap<String, PostingsList>();
 
-        // step 1: collect all posting list for individual terms
-        var queryTermSet = new HashSet<String>();
-        for (var queryTerm : query.queryterm) {
-            queryTermSet.add(queryTerm.term);
-        }
-
-        for (var term : queryTermSet) {
-            queryPostingsList.add(index.getPostings(term));
-        }
-
-        if (queryPostingsList.size() == 0) {
+        if (query.size() == 0) {
             return null;
         }
 
-        // step 2: intersection algorithm with the rest
-        var totalAnswer = new PostingsList(queryPostingsList.get(0));
+        var start = System.currentTimeMillis();
+        var parsing = 0L;
 
-        for (int queryListIndex = 1; queryListIndex < queryPostingsList.size(); queryListIndex++) {
-            var queryList = queryPostingsList.get(queryListIndex);
+        var intialTerm = query.queryterm.get(0).term;
 
-            totalAnswer = intersectComparison(totalAnswer, queryList);
+        var parsingStart = System.currentTimeMillis();
+        var intialPostingsList = index.getPostings(intialTerm);
+        var parsingEnd = System.currentTimeMillis();
+        parsing += (parsingEnd - parsingStart);
+
+        cache.put(intialTerm, intialPostingsList);
+        var totalAnswer = new PostingsList(intialPostingsList);
+
+        for (int i = 1; i < query.size(); i++) {
+            var token = query.queryterm.get(i).term;
+
+            var cachedList = cache.get(token);
+            if (cachedList == null) {
+                parsingStart = System.currentTimeMillis();
+                cachedList = index.getPostings(token);
+                parsingEnd = System.currentTimeMillis();
+                parsing += (parsingEnd - parsingStart);
+
+                cache.put(token, cachedList);
+            } else {
+                continue;
+            }
+
+            totalAnswer = intersectComparison(totalAnswer, cachedList);
 
             if (totalAnswer.size() == 0) {
                 break;
             }
         }
+
+        var end = System.currentTimeMillis();
+
+        System.out.println("skips: " + noSkips);
+        System.out.println("skip distance: " + skipDistance);
+        System.out.println(
+                "intersection query took: " + (end - start) + " ms (" + ((end - start) - parsing)
+                        + " ms without parsing)");
 
         return totalAnswer;
     }
@@ -106,17 +126,29 @@ public class Searcher {
             return null;
         }
 
-        var intialPostingsList = index.getPostings(query.queryterm.get(0).term);
+        var start = System.currentTimeMillis();
+        var parsing = 0L;
+
+        var intialTerm = query.queryterm.get(0).term;
+
+        var parsingStart = System.currentTimeMillis();
+        var intialPostingsList = index.getPostings(intialTerm);
+        var parsingEnd = System.currentTimeMillis();
+        parsing += (parsingEnd - parsingStart);
+
+        cache.put(intialTerm, intialPostingsList);
         var totalAnswer = new PostingsList(intialPostingsList);
 
-        var start = System.currentTimeMillis();
-
-        for (int i = 0; i < query.size(); i++) {
+        for (int i = 1; i < query.size(); i++) {
             var token = query.queryterm.get(i).term;
 
             var cachedList = cache.get(token);
             if (cachedList == null) {
+                parsingStart = System.currentTimeMillis();
                 cachedList = index.getPostings(token);
+                parsingEnd = System.currentTimeMillis();
+                parsing += (parsingEnd - parsingStart);
+
                 cache.put(token, cachedList);
             }
 
@@ -127,12 +159,12 @@ public class Searcher {
             }
         }
 
-        System.out.println("skips: " + noSkips);
-        System.out.println("skip distance: " + skipDistance);
-
         var end = System.currentTimeMillis();
 
-        System.out.println("phrase query took: " + (end - start) + " ms");
+        System.out.println("skips: " + noSkips);
+        System.out.println("skip distance: " + skipDistance);
+        System.out.println(
+                "phrase query took: " + (end - start) + " ms (" + ((end - start) - parsing) + " ms without parsing)");
 
         return totalAnswer;
     }
