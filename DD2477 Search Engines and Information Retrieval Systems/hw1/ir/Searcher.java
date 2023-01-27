@@ -9,6 +9,7 @@ package ir;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
@@ -104,20 +105,42 @@ public class Searcher {
     }
 
     private PostingsList phraseQuery(Query query) {
+        var queryPostingsMap = new HashMap<String, PostingsList>();
         var queryPostingsList = new ArrayList<PostingsList>();
 
         // step 1: collect all posting list for individual terms
         for (var queryTerm : query.queryterm) {
-            queryPostingsList.add(index.getPostings(queryTerm.term));
+            var term = queryTerm.term;
+
+            if (queryPostingsMap.containsKey(term)) {
+                queryPostingsList.add(queryPostingsMap.get(term));
+            } else {
+                var newList = index.getPostings(term);
+                queryPostingsMap.put(term, newList);
+                queryPostingsList.add(newList);
+            }
+        }
+
+        if (queryPostingsList.size() == 0) {
+            return null;
         }
 
         // step 2: modified intersection algorithm with the rest
         var totalAnswer = new PostingsList(queryPostingsList.get(0));
 
+        var start = System.currentTimeMillis();
+
+        int noSkips = 0;
+        int skipDistance = 0;
+        
         for (int queryListIndex = 1; queryListIndex < queryPostingsList.size(); queryListIndex++) {
             var queryList = queryPostingsList.get(queryListIndex);
 
+            var totalAnswerSkipInterval = (int) Math.sqrt(totalAnswer.size());
+            var queryListSkipInterval = (int) Math.sqrt(queryList.size());
+
             int i = 0, j = 0;
+
 
             var answer = new PostingsList(queryList.getToken());
             while (i < totalAnswer.size() && j < queryList.size()) {
@@ -125,12 +148,44 @@ public class Searcher {
                 var entry2 = queryList.get(j);
                 var combined = new PostingsEntry(entry1.docID, 0);
 
+                var entry1SkipInterval = (int) Math.sqrt(entry1.offsets.size());
+                var entry2SkipInterval = (int) Math.sqrt(entry2.offsets.size());
+
                 if (entry1.docID == entry2.docID) {
-                    for (var offset1 : entry1.offsets) {
-                        combined.offsets.addAll((ArrayList<Integer>) entry2.offsets
-                                .stream()
-                                .filter(offset2 -> offset1 == offset2 - 1)
-                                .collect(Collectors.toList()));
+
+                    for (int e1 = 0; e1 < entry1.offsets.size(); e1++) {
+                        for (int e2 = 0; e2 < entry2.offsets.size(); e2++) {
+                            // check if we can use some skips
+                            if (e1 % entry1SkipInterval == 0) {
+                                var skipTo = Math.min(e1 + entry1SkipInterval, entry1.offsets.size() - 1);
+                                var offset1Skip = entry1.offsets.get(skipTo);
+                                if (offset1Skip < entry2.offsets.get(e2)) {
+                                    e1 = skipTo;
+
+                                    noSkips++;
+                                    skipDistance += entry1SkipInterval;
+                                }
+                            }
+
+                            // check if we can use some skips
+                            if (e2 % entry2SkipInterval == 0) {
+                                var skipTo = Math.min(e2 + entry2SkipInterval, entry2.offsets.size() - 1);
+                                var offset2Skip = entry2.offsets.get(skipTo);
+                                if (offset2Skip <= entry1.offsets.get(e1)) {
+                                    e2 = skipTo;
+
+                                    noSkips++;
+                                    skipDistance += entry2SkipInterval;
+                                }
+                            }
+
+                            var offset1 = entry1.offsets.get(e1);
+                            var offset2 = entry2.offsets.get(e2);
+
+                            if (offset2 == offset1 + 1) {
+                                combined.offsets.add(offset2);
+                            }
+                        }
                     }
 
                     if (combined.offsets.size() != 0) {
@@ -140,9 +195,33 @@ public class Searcher {
                     i++;
                     j++;
                 } else if (entry1.docID < entry2.docID) {
-                    i++;
+                    // check if we can use some skips
+                    if (i % totalAnswerSkipInterval == 0) {
+                        var skipTo = Math.min(i + totalAnswerSkipInterval, totalAnswer.size() - 1);
+                        var entry1Skip = totalAnswer.get(skipTo);
+                        if (entry1Skip.docID <= entry2.docID) {
+                            i = skipTo;
+                        } else {
+                            i++;
+                        }
+                    } else {
+                        i++;
+                    }
+
                 } else {
-                    j++;
+                    // check if we can use some skips
+                    if (j % queryListSkipInterval == 0) {
+                        var skipTo = Math.min(j + totalAnswerSkipInterval, queryList.size() - 1);
+                        var entry2Skip = queryList.get(skipTo);
+                        if (entry2Skip.docID <= entry1.docID) {
+                            j = skipTo;
+                        } else {
+                            j++;
+                        }
+                    } else {
+                        j++;
+                    }
+
                 }
             }
             totalAnswer = answer;
@@ -151,6 +230,13 @@ public class Searcher {
                 break;
             }
         }
+
+        System.out.println("skips: " + noSkips);
+        System.out.println("skip distance: " + skipDistance);
+
+        var end = System.currentTimeMillis();
+
+        System.out.println("phrase query took: " + (end - start) + " ms");
 
         return totalAnswer;
     }

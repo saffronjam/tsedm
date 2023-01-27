@@ -47,10 +47,10 @@ public abstract class PersistentHashedIndex implements Index {
 
     /** The dictionary hash table on disk can fit this many entries. */
     // davis
-    // public static final long TABLESIZE = 611953L;
+    public static final long TABLESIZE = 611953L;
 
     // guardian
-    public static final long TABLESIZE = 3500017L;
+    // public static final long TABLESIZE = 3500017L;
 
     /** The dictionary hash table is stored in this file. */
     protected RandomAccessFile dictionaryFile;
