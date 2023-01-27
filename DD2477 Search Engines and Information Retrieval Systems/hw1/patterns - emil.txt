@@ -46,12 +46,14 @@
 // abbrevations: e.g.
 \w\.\w\.
 
-// separators (filenames, dashes): my_file.txt, word-together
-[A-Za-z0-9_]+[-,\.][A-Za-z0-9]+
-
 // currency: $100
 [$]\d+
 
+// hyphen: word-together
+[A-Za-z0-9_]+[-][A-Za-z0-9]+
+
+// separators (filenames): my_file.txt
+[A-Za-z0-9_]+[\.](ppt|doc|xlsx)
 
 
 // The patterns will be tried from top to bottom, so it is a
