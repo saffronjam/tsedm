@@ -113,10 +113,10 @@ class EPFD(epfdInit: Init[EPFD]) extends ComponentDefinition {
 
   pLink uponEvent {
     case PL_Deliver(src, HeartbeatRequest(seq)) => {
-      trigger(PL_Send(src, HeartbeatReply(seq)) -> epfd)
+      trigger(PL_Send(src, HeartbeatReply(seq)) -> pLink);
     }
     case PL_Deliver(src, HeartbeatReply(seq)) => {
-      alive = alive + src
+      alive = alive + src;
       if (seq == seqnum && suspected.contains(src)){
         alive = alive + src;
       }
