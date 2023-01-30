@@ -175,7 +175,7 @@ public class Searcher {
 
             var skipInterval1 = (int) Math.sqrt(entry1.offsets.size());
             var skipInterval2 = (int) Math.sqrt(entry2.offsets.size());
-
+            
             int i = 0, j = 0;
             while (i < entry1.offsets.size() && j < entry2.offsets.size()) {
                 while (canSkipOffsets(i, skipInterval1, entry2.offsets.get(j), entry1.offsets)) {

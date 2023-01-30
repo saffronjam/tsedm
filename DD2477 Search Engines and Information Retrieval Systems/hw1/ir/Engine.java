@@ -17,8 +17,8 @@ import java.io.File;
 public class Engine {
 
     /** The inverted index. */
-    // Index index = new PersistentScalableHashedIndex();
-    Index index = new PersistentNonScalableHashedIndex();
+    Index index = new PersistentScalableHashedIndex();
+    // Index index = new PersistentNonScalableHashedIndex();
     // Index index = new PersistentHashedIndex();
     // Index index = new HashedIndex();
 
