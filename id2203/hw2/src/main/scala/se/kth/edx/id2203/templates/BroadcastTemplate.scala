@@ -202,20 +202,34 @@ class WaitingCRB(init: Init[WaitingCRB]) extends ComponentDefinition {
     case Init(s: Address, t: Set[Address]@unchecked) => (s, VectorClock.empty(t.toSeq))
   };
 
-  //  val V = VectorClock.empty(init match { case Init(_, t: Set[Address]) => t.toSeq })
+  val V = VectorClock.empty(init match { case Init(_, t: Set[Address]) => t.toSeq })
   var pending: ListBuffer[(Address, DataMessage)] = ListBuffer();
   var lsn = 0;
 
   //WaitingCRB Event Handlers
   crb uponEvent {
     case x: CRB_Broadcast => {
-      /* WRITE YOUR CODE HERE */
+      val W = V.copy()
+      W.set(self, lsn)
+      lsn += 1
+
+      trigger(RB_Broadcast(DataMessage(W, x.payload)) -> rb)
     }
   }
 
   rb uponEvent {
     case x@RB_Deliver(src: Address, msg: DataMessage) => {
-      /* WRITE YOUR CODE HERE */
+
+      pending.addOne((src, msg))
+
+      var prime = pending.find(_._2.timestamp.<=(V))
+      while (prime.isDefined) {
+        pending = pending.filter(_._1.!=(prime.get._1))
+        V.inc(prime.get._1)
+        trigger(CRB_Deliver(prime.get._1, prime.get._2.payload) -> crb);
+
+        prime = pending.find(_._2.timestamp.<=(V))
+      }
     }
   }
 }
