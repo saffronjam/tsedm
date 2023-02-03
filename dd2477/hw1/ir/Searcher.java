@@ -31,8 +31,11 @@ public class Searcher {
         this.kgIndex = kgIndex;
     }
 
-    int noSkips = 0;
+    int skips = 0;
     int skipDistance = 0;
+
+    int docIdSkips = 0;
+    int docIdskipDistance = 0;
 
     /**
      * Searches the index for postings matching the query.
@@ -41,21 +44,23 @@ public class Searcher {
      */
     public PostingsList search(Query query, QueryType queryType, RankingType rankingType, NormalizationType normType) {
 
-        noSkips = 0;
+        skips = 0;
         skipDistance = 0;
+        docIdSkips = 0;
+        docIdskipDistance = 0;
 
-        switch (queryType) {
-            case INTERSECTION_QUERY:
-                return intersectionQuery(query);
-            case PHRASE_QUERY:
-                return phraseQuery(query);
-            case RANKED_QUERY:
-                return rankedQuery(query);
-            default:
-                break;
-        }
+        var list = switch (queryType) {
+            case INTERSECTION_QUERY -> intersectionQuery(query);
+            case PHRASE_QUERY -> phraseQuery(query);
+            case RANKED_QUERY -> rankedQuery(query);
+        };
 
-        return null;
+        System.out.println("docID skips: " + docIdSkips);
+        System.out.println("docID skip distance: " + docIdskipDistance);
+        System.out.println("skips: " + skips);
+        System.out.println("skip distance: " + skipDistance);
+
+        return list;
     }
 
     private PostingsList intersectionQuery(Query query) {
@@ -71,12 +76,11 @@ public class Searcher {
         var intialTerm = query.queryterm.get(0).term;
 
         var parsingStart = System.currentTimeMillis();
-        var intialPostingsList = index.getPostings(intialTerm);
+        var totalAnswer = index.getPostings(intialTerm);
         var parsingEnd = System.currentTimeMillis();
         parsing += (parsingEnd - parsingStart);
 
-        cache.put(intialTerm, intialPostingsList);
-        var totalAnswer = new PostingsList(intialPostingsList);
+        cache.put(intialTerm, totalAnswer);
 
         for (int i = 1; i < query.size(); i++) {
             var token = query.queryterm.get(i).term;
@@ -102,8 +106,6 @@ public class Searcher {
 
         var end = System.currentTimeMillis();
 
-        System.out.println("skips: " + noSkips);
-        System.out.println("skip distance: " + skipDistance);
         System.out.println(
                 "intersection query took: " + (end - start) + " ms (" + ((end - start) - parsing)
                         + " ms without parsing)");
@@ -132,12 +134,11 @@ public class Searcher {
         var intialTerm = query.queryterm.get(0).term;
 
         var parsingStart = System.currentTimeMillis();
-        var intialPostingsList = index.getPostings(intialTerm);
+        var totalAnswer = index.getPostings(intialTerm);
         var parsingEnd = System.currentTimeMillis();
         parsing += (parsingEnd - parsingStart);
 
-        cache.put(intialTerm, intialPostingsList);
-        var totalAnswer = new PostingsList(intialPostingsList);
+        cache.put(intialTerm, totalAnswer);
 
         for (int i = 1; i < query.size(); i++) {
             var token = query.queryterm.get(i).term;
@@ -161,8 +162,6 @@ public class Searcher {
 
         var end = System.currentTimeMillis();
 
-        System.out.println("skips: " + noSkips);
-        System.out.println("skip distance: " + skipDistance);
         System.out.println(
                 "phrase query took: " + (end - start) + " ms (" + ((end - start) - parsing) + " ms without parsing)");
 
@@ -175,20 +174,20 @@ public class Searcher {
 
             var skipInterval1 = (int) Math.sqrt(entry1.offsets.size());
             var skipInterval2 = (int) Math.sqrt(entry2.offsets.size());
-            
+
             int i = 0, j = 0;
             while (i < entry1.offsets.size() && j < entry2.offsets.size()) {
                 while (canSkipOffsets(i, skipInterval1, entry2.offsets.get(j), entry1.offsets)) {
                     i += skipInterval1;
 
-                    noSkips++;
+                    skips++;
                     skipDistance += skipInterval1;
                 }
 
                 while (canSkipOffsets(j, skipInterval2, entry1.offsets.get(i), entry2.offsets)) {
                     j += skipInterval2;
 
-                    noSkips++;
+                    skips++;
                     skipDistance += skipInterval2;
                 }
 
@@ -234,10 +233,16 @@ public class Searcher {
 
             while (canSkipDocuments(i, p1SkipInterval, entry2.docID, p1)) {
                 i += p1SkipInterval;
+
+                docIdSkips++;
+                docIdskipDistance += p1SkipInterval;
             }
 
             while (canSkipDocuments(j, p2SkipInterval, entry1.docID, p2)) {
                 j += p2SkipInterval;
+
+                docIdSkips++;
+                docIdskipDistance += p1SkipInterval;
             }
 
             if (entry1.docID == entry2.docID) {

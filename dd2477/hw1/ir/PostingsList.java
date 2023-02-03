@@ -21,10 +21,6 @@ public class PostingsList {
         this.token = token;
     }
 
-    public PostingsList(PostingsList copy) {
-        list.addAll(copy.list);
-    }
-
     /** Number of postings in this list. */
     public int size() {
         return list.size();
