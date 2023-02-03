@@ -21,8 +21,8 @@ import se.kth.edx.id2203.core.Ports._
 import se.kth.edx.id2203.templates.WaitingCRB._
 import se.kth.edx.id2203.validation._
 import se.sics.kompics.network._
-import se.sics.kompics.sl.{ Init, _ }
-import se.sics.kompics.{ ComponentDefinition => _, Port => _, _ }
+import se.sics.kompics.sl.{Init, _}
+import se.sics.kompics.{ComponentDefinition => _, Port => _, _}
 
 import scala.collection.immutable.Set
 import scala.collection.mutable
@@ -61,19 +61,21 @@ class BasicBroadcast(init: Init[BasicBroadcast]) extends ComponentDefinition {
 
   //BasicBroadcast Component State and Initialization
   val (self, topology) = init match {
-    case Init(s: Address, t: Set[Address] @unchecked) => (s, t)
+    case Init(s: Address, t: Set[Address]@unchecked) => (s, t)
   };
 
   //BasicBroadcast Event Handlers
   beb uponEvent {
     case x: BEB_Broadcast => {
-        /* WRITE YOUR CODE HERE */
+      for (p <- topology) {
+        trigger(PL_Send(p, BEB_Broadcast(x.payload)) -> pLink)
+      }
     }
   }
 
   pLink uponEvent {
     case PL_Deliver(src, BEB_Broadcast(payload)) => {
-        /* WRITE YOUR CODE HERE */
+      trigger(BEB_Deliver(src, payload) -> beb)
     }
   }
 }
@@ -119,14 +121,14 @@ class EagerReliableBroadcast(init: Init[EagerReliableBroadcast]) extends Compone
 
   //EagerReliableBroadcast Event Handlers
   rb uponEvent {
-    case x @ RB_Broadcast(_) => {
-        /* WRITE YOUR CODE HERE */
+    case x@RB_Broadcast(_) => {
+      /* WRITE YOUR CODE HERE */
     }
   }
 
   beb uponEvent {
-    case BEB_Deliver(src, y @ RB_Broadcast(payload)) => {
-        /* WRITE YOUR CODE HERE */
+    case BEB_Deliver(src, y@RB_Broadcast(payload)) => {
+      /* WRITE YOUR CODE HERE */
     }
   }
 }
@@ -193,7 +195,7 @@ class WaitingCRB(init: Init[WaitingCRB]) extends ComponentDefinition {
 
   //WaitingCRB Component State and Initialization
   val (self, vec) = init match {
-    case Init(s: Address, t: Set[Address] @unchecked) => (s, VectorClock.empty(t.toSeq))
+    case Init(s: Address, t: Set[Address]@unchecked) => (s, VectorClock.empty(t.toSeq))
   };
 
   //  val V = VectorClock.empty(init match { case Init(_, t: Set[Address]) => t.toSeq })
@@ -203,21 +205,21 @@ class WaitingCRB(init: Init[WaitingCRB]) extends ComponentDefinition {
   //WaitingCRB Event Handlers
   crb uponEvent {
     case x: CRB_Broadcast => {
-        /* WRITE YOUR CODE HERE */
+      /* WRITE YOUR CODE HERE */
     }
   }
 
   rb uponEvent {
-    case x @ RB_Deliver(src: Address, msg: DataMessage) => {
-        /* WRITE YOUR CODE HERE */
+    case x@RB_Deliver(src: Address, msg: DataMessage) => {
+      /* WRITE YOUR CODE HERE */
     }
   }
 }
 
-object BroadcastCheck extends App  {
-    // NOTE: this exercise has 3 parts, during development feel free to comment out individual checks.
-    // For submission, all checks need to pass.
-    checkBEB[BasicBroadcast]();
-    checkRB[BasicBroadcast,EagerReliableBroadcast]();
-    checkCRB[BasicBroadcast, EagerReliableBroadcast, WaitingCRB]();
+object BroadcastCheck extends App {
+  // NOTE: this exercise has 3 parts, during development feel free to comment out individual checks.
+  // For submission, all checks need to pass.
+  checkBEB[BasicBroadcast]();
+  checkRB[BasicBroadcast, EagerReliableBroadcast]();
+  checkCRB[BasicBroadcast, EagerReliableBroadcast, WaitingCRB]();
 }
