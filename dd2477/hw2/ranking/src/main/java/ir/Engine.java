@@ -1,58 +1,83 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, 2017
  */
 
 package ir;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.io.File;
 
 /**
  * This is the main class for the search engine.
  */
 public class Engine {
 
-    /** The inverted index. */
-    Index index = new PersistentScalableHashedIndex();
-    // Index index = new PersistentNonScalableHashedIndex();
+    /**
+     * The inverted index.
+     */
+
+    // Index index = new PersistentScalableHashedIndex();
+    Index index = new PersistentNonScalableHashedIndex();
     // Index index = new PersistentHashedIndex();
     // Index index = new HashedIndex();
 
-    /** The indexer creating the search index. */
+    /**
+     * The indexer creating the search index.
+     */
     Indexer indexer;
 
-    /** K-gram index */
+    /**
+     * K-gram index
+     */
     KGramIndex kgIndex;
 
-    /** The searcher used to search the index. */
+    /**
+     * The searcher used to search the index.
+     */
     Searcher searcher;
 
-    /** Spell checker */
+    /**
+     * Spell checker
+     */
     SpellChecker speller;
 
-    /** The engine GUI. */
+    /**
+     * The engine GUI.
+     */
     SearchGUI gui;
 
-    /** Directories that should be indexed. */
+    /**
+     * Directories that should be indexed.
+     */
     ArrayList<String> dirNames = new ArrayList<String>();
 
-    /** Lock to prevent simultaneous access to the index. */
+    /**
+     * Lock to prevent simultaneous access to the index.
+     */
     Object indexLock = new Object();
 
-    /** The patterns matching non-standard words (e-mail addresses, etc.) */
+    /**
+     * The patterns matching non-standard words (e-mail addresses, etc.)
+     */
     String patterns_file = null;
 
-    /** The file containing the logo. */
+    /**
+     * The file containing the logo.
+     */
     String pic_file = "";
 
-    /** The file containing the pageranks. */
+    /**
+     * The file containing the pageranks.
+     */
     String rank_file = "";
 
-    /** For persistent indexes, we might not need to do any indexing. */
+    /**
+     * For persistent indexes, we might not need to do any indexing.
+     */
     boolean is_indexing = true;
 
     /* ----------------------------------------------- */
