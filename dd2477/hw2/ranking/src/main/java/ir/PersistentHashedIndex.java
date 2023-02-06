@@ -523,7 +523,7 @@ public abstract class PersistentHashedIndex implements Index {
         }
 
         // sort entries to make the intersection algorithm work
-        merged.sortEntries();
+        merged.sortEntriesByDocId();
         return merged;
     }
 

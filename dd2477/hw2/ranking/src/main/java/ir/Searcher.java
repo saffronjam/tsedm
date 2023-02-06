@@ -1,31 +1,33 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, 2017
  */
 
 package ir;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Searches an index for results of a query.
  */
 public class Searcher {
 
-    /** The index to be searched by this Searcher. */
+    /**
+     * The index to be searched by this Searcher.
+     */
     Index index;
 
-    /** The k-gram index to be searched by this Searcher */
+    /**
+     * The k-gram index to be searched by this Searcher
+     */
     KGramIndex kgIndex;
 
-    /** Constructor */
+    /**
+     * Constructor
+     */
     public Searcher(Index index, KGramIndex kgIndex) {
         this.index = index;
         this.kgIndex = kgIndex;
@@ -39,7 +41,7 @@ public class Searcher {
 
     /**
      * Searches the index for postings matching the query.
-     * 
+     *
      * @return A postings list representing the result of the query.
      */
     public PostingsList search(Query query, QueryType queryType, RankingType rankingType, NormalizationType normType) {
@@ -73,14 +75,14 @@ public class Searcher {
         var start = System.currentTimeMillis();
         var parsing = 0L;
 
-        var intialTerm = query.queryterm.get(0).term;
+        var initialTerm = query.queryterm.get(0).term;
 
         var parsingStart = System.currentTimeMillis();
-        var totalAnswer = index.getPostings(intialTerm);
+        var totalAnswer = index.getPostings(initialTerm);
         var parsingEnd = System.currentTimeMillis();
         parsing += (parsingEnd - parsingStart);
 
-        cache.put(intialTerm, totalAnswer);
+        cache.put(initialTerm, totalAnswer);
 
         for (int i = 1; i < query.size(); i++) {
             var token = query.queryterm.get(i).term;
@@ -114,9 +116,7 @@ public class Searcher {
     }
 
     private PostingsList intersectComparison(PostingsList p1, PostingsList p2) {
-        var answer = makeIntersectionQuery(p1, p2, (entry1, entry2) -> {
-            return entry1;
-        });
+        var answer = makeIntersectionQuery(p1, p2, (entry1, entry2) -> entry1);
 
         return answer;
     }
@@ -275,11 +275,7 @@ public class Searcher {
         }
 
         var offset1Skip = offsets.get(skipTo);
-        if (offset1Skip.intValue() >= otherOffset - 1) {
-            return false;
-        }
-
-        return true;
+        return offset1Skip < otherOffset - 1;
     }
 
     private boolean canSkipDocuments(int index, int interval, int otherDocId, PostingsList postingsList) {
@@ -293,14 +289,60 @@ public class Searcher {
         }
 
         var entry2Skip = postingsList.get(skipTo);
-        if (entry2Skip.docID > otherDocId) {
-            return false;
-        }
-
-        return true;
+        return entry2Skip.docID <= otherDocId;
     }
 
     private PostingsList rankedQuery(Query query) {
-        return null;
+        var cache = new HashMap<String, PostingsList>();
+
+        if (query.size() == 0) {
+            return null;
+        }
+
+        var start = System.currentTimeMillis();
+        var parsing = 0L;
+
+        var totalAnswer = new PostingsList("");
+
+        for (int i = 0; i < query.size(); i++) {
+            var token = query.queryterm.get(i).term;
+
+            var cachedList = cache.get(token);
+            if (cachedList == null) {
+                var parsingStart = System.currentTimeMillis();
+                cachedList = index.getPostings(token);
+                var parsingEnd = System.currentTimeMillis();
+                parsing += (parsingEnd - parsingStart);
+
+                cache.put(token, cachedList);
+            } else {
+                continue;
+            }
+
+            for (int j = 0; j < cachedList.size(); j++) {
+                var entry = cachedList.get(j);
+
+                var tf = cachedList.get(j).offsets.size();
+
+                // idf = log(N/df)
+                var idf = Math.log((double) index.docNames.size() / cachedList.size());
+
+                var score = tf * idf / index.docLengths.get(entry.docID);
+
+                entry.score = score;
+
+                totalAnswer.add(entry.docID, entry.score, entry.offsets);
+            }
+        }
+
+        totalAnswer.sortEntriesByScore();
+
+        var end = System.currentTimeMillis();
+
+        System.out.println(
+                "ranked query took: " + (end - start) + " ms (" + ((end - start) - parsing)
+                        + " ms without parsing)");
+
+        return totalAnswer;
     }
 }

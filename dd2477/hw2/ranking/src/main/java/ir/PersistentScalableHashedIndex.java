@@ -1,22 +1,25 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, KTH, 2018
  */
 
 package ir;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
- *   
+ *
  *   Both the words (the dictionary) and the data (the postings list) are
  *   stored in RandomAccessFiles that permit fast (almost constant-time)
- *   disk seeks. 
+ *   disk seeks.
  *
  *   When words are read and indexed, they are first put in an ordinary,
  *   main-memory HashMap. When all words are read, the index is committed
@@ -424,7 +427,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
     }
 
     private void verify(RandomAccessFile dictionary1, RandomAccessFile dictionary2, RandomAccessFile dictionaryOut,
-            RandomAccessFile data1, RandomAccessFile data2, RandomAccessFile dataOut) {
+                        RandomAccessFile data1, RandomAccessFile data2, RandomAccessFile dataOut) {
 
         var uniqueTokens = new HashSet<String>();
         var uniqueTokenMerged = new HashSet<String>();
