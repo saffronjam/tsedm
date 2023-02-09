@@ -85,6 +85,7 @@ public class PostingsList {
         } else {
             // if entry did exist, just add the offsets
             entry.offsets.addAll(offsets);
+            entry.score += score;
         }
     }
 

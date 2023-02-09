@@ -302,7 +302,7 @@ public class Searcher {
         var start = System.currentTimeMillis();
         var parsing = 0L;
 
-        var totalAnswer = new PostingsList("");
+        var answer = new PostingsList("");
 
         for (int i = 0; i < query.size(); i++) {
             var token = query.queryterm.get(i).term;
@@ -331,11 +331,11 @@ public class Searcher {
 
                 entry.score = score;
 
-                totalAnswer.add(entry.docID, entry.score, entry.offsets);
+                answer.add(entry.docID, entry.score, entry.offsets);
             }
         }
 
-        totalAnswer.sortEntriesByScore();
+        answer.sortEntriesByScore();
 
         var end = System.currentTimeMillis();
 
@@ -343,6 +343,6 @@ public class Searcher {
                 "ranked query took: " + (end - start) + " ms (" + ((end - start) - parsing)
                         + " ms without parsing)");
 
-        return totalAnswer;
+        return answer;
     }
 }
