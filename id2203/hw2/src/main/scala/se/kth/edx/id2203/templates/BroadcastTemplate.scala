@@ -209,7 +209,7 @@ class WaitingCRB(init: Init[WaitingCRB]) extends ComponentDefinition {
   //WaitingCRB Event Handlers
   crb uponEvent {
     case x: CRB_Broadcast => {
-      val W = V.copy()
+      val W = VectorClock(V)
       W.set(self, lsn)
       lsn += 1
 
@@ -222,13 +222,17 @@ class WaitingCRB(init: Init[WaitingCRB]) extends ComponentDefinition {
 
       pending.addOne((src, msg))
 
-      var prime = pending.find(_._2.timestamp.<=(V))
-      while (prime.isDefined) {
-        pending = pending.filter(_._1.!=(prime.get._1))
-        V.inc(prime.get._1)
-        trigger(CRB_Deliver(prime.get._1, prime.get._2.payload) -> crb);
+      // while ∃ (p', W', m') W' <= V
+      var findResult = pending.find(_._2.timestamp.<=(V))
+      while (findResult.isDefined) {
+        val address = findResult.get._1
+        val data = findResult.get._2
 
-        prime = pending.find(_._2.timestamp.<=(V))
+        pending -= ((address, data))
+        V.inc(address)
+        trigger(CRB_Deliver(address, data.payload) -> crb);
+
+        findResult = pending.find(_._2.timestamp.<=(V))
       }
     }
   }
