@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id="hw3 [file:/home/emil/repos/tsedm/id2203/hw3/]" external.linked.project.path="$MODULE_DIR$/../.." external.root.project.path="$MODULE_DIR$/../.." external.system.id="SBT" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_17">
+    <output url="file://$MODULE_DIR$/../../target/scala-2.13/classes" />
+    <output-test url="file://$MODULE_DIR$/../../target/scala-2.13/test-classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../..">
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/scala" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../../target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="sbt: ch.qos.logback:logback-classic:0.9.28:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: ch.qos.logback:logback-core:0.9.28:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.barchart.udt:barchart-udt-bundle:2.3.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.code.findbugs:jsr305:3.0.2:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.errorprone:error_prone_annotations:2.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.guava:failureaccess:1.0.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.guava:guava:27.1-jre:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.google.j2objc:j2objc-annotations:1.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.michaelpollmeier:scala-arm_2.13:2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.typesafe.scala-logging:scala-logging_2.13:3.9.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: com.typesafe:config:1.3.4:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.netty:netty-all:4.1.42.Final:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.checkerframework:checker-qual:2.5.2:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.codehaus.mojo:animal-sniffer-annotations:1.17:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.javassist:javassist:3.26.0-GA:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.javatuples:javatuples:1.2:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang.modules:scala-java8-compat_2.13:0.9.1:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scala-lang.modules:scala-xml_2.13:1.2.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.13.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.scala-lang:scala-reflect:2.13.1:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalactic:scalactic_2.13:3.1.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest-compatible:3.1.0:jar" level="project" />
+    <orderEntry type="library" scope="TEST" name="sbt: org.scalatest:scalatest_2.13:3.1.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.slf4j:slf4j-api:1.7.36:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.slf4j:slf4j-simple:1.7.5:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics.basic:kompics-component-java-timer:1.2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics.basic:kompics-component-netty-network:1.2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics.basic:kompics-port-network:1.2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics.basic:kompics-port-timer:1.2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics.simulator:core:1.2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics:kompics-core:1.2.1:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics:kompics-scala-simulator_2.13:2.0.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: se.sics.kompics:kompics-scala_2.13:2.0.0:jar" level="project" />
+    <orderEntry type="module-library">
+      <library name="sbt: unmanaged-jars">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../lib/kompicsteaching_2.13-1.2.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>
