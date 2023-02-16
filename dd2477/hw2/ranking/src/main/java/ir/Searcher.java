@@ -7,6 +7,11 @@
 
 package ir;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,12 +30,16 @@ public class Searcher {
      */
     KGramIndex kgIndex;
 
+    HashMap<String, Double> pagerank = new HashMap<>();
+
     /**
      * Constructor
      */
     public Searcher(Index index, KGramIndex kgIndex) {
         this.index = index;
         this.kgIndex = kgIndex;
+
+        loadPagerank("grade-c/pagerank");
     }
 
     int skips = 0;
@@ -38,6 +47,22 @@ public class Searcher {
 
     int docIdSkips = 0;
     int docIdskipDistance = 0;
+
+
+    private void loadPagerank(String filepath) {
+        try (var reader = new BufferedReader(new FileReader(filepath))) {
+            var line = reader.readLine();
+
+            while (line != null) {
+                var split = line.split(";");
+                pagerank.put(split[0], Double.parseDouble(split[1]));
+                line = reader.readLine();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Searches the index for postings matching the query.
@@ -54,7 +79,7 @@ public class Searcher {
         var list = switch (queryType) {
             case INTERSECTION_QUERY -> intersectionQuery(query);
             case PHRASE_QUERY -> phraseQuery(query);
-            case RANKED_QUERY -> rankedQuery(query);
+            case RANKED_QUERY -> rankedQuery(query, rankingType);
         };
 
         System.out.println("docID skips: " + docIdSkips);
@@ -292,7 +317,7 @@ public class Searcher {
         return entry2Skip.docID <= otherDocId;
     }
 
-    private PostingsList rankedQuery(Query query) {
+    private PostingsList rankedQuery(Query query, RankingType rankingType) {
         var cache = new HashMap<String, PostingsList>();
 
         if (query.size() == 0) {
@@ -322,12 +347,30 @@ public class Searcher {
             for (int j = 0; j < cachedList.size(); j++) {
                 var entry = cachedList.get(j);
 
-                var tf = cachedList.get(j).offsets.size();
+                var score = 0.0;
 
-                // idf = log(N/df)
-                var idf = Math.log((double) index.docNames.size() / cachedList.size());
 
-                var score = tf * idf / index.docLengths.get(entry.docID);
+                switch (rankingType) {
+                    case TF_IDF: {
+                        var tf = cachedList.get(j).offsets.size();
+
+                        // idf = log(N/df)
+                        var idf = Math.log((double) index.docNames.size() / cachedList.size());
+
+                        score = tf * idf / index.docLengths.get(entry.docID);
+                        break;
+                    }
+                    case PAGERANK: {
+                        var docNameLookup = index.docNames.get(entry.docID);
+                        var docName = Paths.get(docNameLookup).getFileName().toString();
+
+                        var pagerankLookup = pagerank.getOrDefault(docName, 0.0);
+
+                        score = pagerankLookup;
+                        break;
+                    }
+                }
+
 
                 entry.score = score;
 
