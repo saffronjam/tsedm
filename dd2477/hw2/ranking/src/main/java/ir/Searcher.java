@@ -347,36 +347,26 @@ public class Searcher {
             for (int j = 0; j < cachedList.size(); j++) {
                 var entry = cachedList.get(j);
 
-                var score = 0.0;
+                var tf = cachedList.get(j).offsets.size();
 
+                // idf = log(N/df)
+                var idf = Math.log((double) index.docNames.size() / cachedList.size());
 
-                switch (rankingType) {
-                    case TF_IDF: {
-                        var tf = cachedList.get(j).offsets.size();
+                var tfIdfScore = tf * idf / index.docLengths.get(entry.docID);
 
-                        // idf = log(N/df)
-                        var idf = Math.log((double) index.docNames.size() / cachedList.size());
+                var docNameLookup = index.docNames.get(entry.docID);
+                var docName = Paths.get(docNameLookup).getFileName().toString();
 
-                        score = tf * idf / index.docLengths.get(entry.docID);
-                        break;
-                    }
-                    case PAGERANK: {
-                        var docNameLookup = index.docNames.get(entry.docID);
-                        var docName = Paths.get(docNameLookup).getFileName().toString();
+                var pagerankScore = pagerank.getOrDefault(docName, 0.0);
 
-                        var pagerankLookup = pagerank.getOrDefault(docName, 0.0);
+                var c = 0.01;
+                var combined = c * tfIdfScore + (1 - c) * pagerankScore;
 
-                        if (pagerankLookup == null) {
-                            score = 0.0;
-                        } else {
-                            score = pagerankLookup;
-                        }
-                        break;
-                    }
-                }
-
-
-                entry.score = score;
+                entry.score = switch (rankingType) {
+                    case TF_IDF -> tfIdfScore;
+                    case PAGERANK -> pagerankScore;
+                    case COMBINATION -> combined;
+                };
 
                 answer.add(entry.docID, entry.score, entry.offsets);
             }
