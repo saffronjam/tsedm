@@ -142,7 +142,7 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
   beb uponEvent {
     case BEB_Deliver(src, READ(readID)) => {
       /* WRITE YOUR CODE HERE  */
-      trigger(PL_Send(src, VALUE(rid, ts, wr, value)) -> pLink)
+      trigger(PL_Send(src, VALUE(readID, ts, wr, value)) -> pLink)
     }
     case BEB_Deliver(src, w: WRITE) => {
       /* WRITE YOUR CODE HERE  */

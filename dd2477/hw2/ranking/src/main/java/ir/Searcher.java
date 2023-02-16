@@ -366,7 +366,11 @@ public class Searcher {
 
                         var pagerankLookup = pagerank.getOrDefault(docName, 0.0);
 
-                        score = pagerankLookup;
+                        if (pagerankLookup == null) {
+                            score = 0.0;
+                        } else {
+                            score = pagerankLookup;
+                        }
                         break;
                     }
                 }

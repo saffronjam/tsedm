@@ -1,5 +1,6 @@
 import java.util.*;
 import java.io.*;
+import java.text.DecimalFormat;
 
 public class PageRank {
 
@@ -18,6 +19,7 @@ public class PageRank {
 	 * Mapping from document numbers to document names
 	 */
 	String[] docName = new String[MAX_NUMBER_OF_DOCS];
+	String[] docTitles = new String[MAX_NUMBER_OF_DOCS];
 
 	/**
 	 * A memory-efficient representation of the transition matrix.
@@ -56,6 +58,7 @@ public class PageRank {
 
 	public PageRank(String filename) {
 		int noOfDocs = readDocs(filename);
+		readTitles();
 		iterate(noOfDocs, 1000);
 	}
 
@@ -121,11 +124,29 @@ public class PageRank {
 
 	/* --------------------------------------------- */
 
+	void readTitles() {
+		try (BufferedReader in = new BufferedReader(new FileReader("davisTitles.txt"))) {
+			System.err.print("Reading file... ");
+
+			var line = in.readLine();
+			while (line != null) {
+				var splits = line.split(";");
+				docTitles[Integer.parseInt(splits[0])] = splits[1];
+				line = in.readLine();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	/*
 	 * Chooses a probability vector a, and repeatedly computes
 	 * aP, aP^2, aP^3... until aP^i = aP^(i+1).
 	 */
 	void iterate(int numberOfDocs, int maxIterations) {
+		var now = System.currentTimeMillis();
+
 		var prob = new double[numberOfDocs];
 
 		var probPrime = new double[numberOfDocs];
@@ -173,6 +194,23 @@ public class PageRank {
 		var largest30 = sortIndices(prob);
 		for (int i = 0; i < 30; i++) {
 			System.out.println(docName[largest30[i]] + ": " + prob[largest30[i]]);
+		}
+
+		var then = System.currentTimeMillis();
+
+		System.out.println("\ntook: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
+
+		writeData(prob);
+	}
+
+	void writeData(double[] values) {
+		try (var writer = new BufferedWriter(new FileWriter("grade-c/pagerank"))) {
+			for (int i = 0; i < values.length; i++) {
+				writer.write(docTitles[Integer.parseInt(docName[i])] + ";" + values[i] + "\n");
+			}
+		} catch (Exception e) {
+			System.out.println("failed to write to file: " + e.getMessage());
+			System.out.println(e.getStackTrace());
 		}
 	}
 
