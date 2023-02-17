@@ -122,7 +122,7 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
       /* WRITE YOUR CODE HERE  */
 
       acks = 0
-      readlist = mutable.Map.empty
+      resetReadList()
       reading = true
 
       trigger(BEB_Broadcast(READ(rid)) -> beb)
@@ -132,17 +132,17 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
       rid = rid + 1;
       /* WRITE YOUR CODE HERE  */
 
-      writeval = Option(wval)
+      writeval = Some(wval)
       acks = 0
-      readlist = mutable.Map.empty
+      resetReadList()
       trigger(BEB_Broadcast(READ(rid)) -> beb)
     }
   }
 
   beb uponEvent {
-    case BEB_Deliver(src, READ(readID)) => {
+    case BEB_Deliver(src, r: READ) => {
       /* WRITE YOUR CODE HERE  */
-      trigger(PL_Send(src, VALUE(readID, ts, wr, value)) -> pLink)
+      trigger(PL_Send(src, VALUE(r.rid, ts, wr, value)) -> pLink)
     }
     case BEB_Deliver(src, w: WRITE) => {
       /* WRITE YOUR CODE HERE  */
@@ -152,7 +152,7 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
         value = w.writeVal
       }
 
-      trigger(PL_Send(src, ACK(rid)) -> pLink)
+      trigger(PL_Send(src, ACK(w.rid)) -> pLink)
     }
   }
 
@@ -162,13 +162,15 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
         /* WRITE YOUR CODE HERE  */
         readlist.update(src, (v.ts, v.wr, v.value))
 
-        if (readlist.size > n) {
-          var (maxts, rr, readval) = readlist.maxBy(_._2._1)._2
-          readlist = mutable.Map.empty
+        if (readlist.size > n / 2) {
+          var (maxts, rr, rval) = readlist.maxBy(_._2._1)._2
+          resetReadList()
+
+          readval = rval
 
           var bcastval: Option[Any] = None
           if (reading) {
-            bcastval = readval
+            bcastval = rval
           } else {
             rr = selfRank
             maxts += 1
@@ -179,6 +181,7 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
         }
       }
     }
+
     case PL_Deliver(src, v: ACK) => {
       if (v.rid == rid) {
         /* WRITE YOUR CODE HERE  */
@@ -196,8 +199,15 @@ class ReadImposeWriteConsultMajority(init: Init[ReadImposeWriteConsultMajority])
       }
     }
   }
+
+
+  private def resetReadList(): Unit = {
+    readlist = Map.empty
+  }
 }
+
 
 object SharedMemoryCheck extends App {
   checkNNAR[ReadImposeWriteConsultMajority]();
+  var x = 10;
 }
