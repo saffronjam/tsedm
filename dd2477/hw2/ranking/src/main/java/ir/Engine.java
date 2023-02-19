@@ -7,7 +7,7 @@
 
 package ir;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -102,16 +102,51 @@ public class Engine {
             synchronized (indexLock) {
                 gui.displayInfoText("Indexing, please wait...");
                 long startTime = System.currentTimeMillis();
-                for (int i = 0; i < dirNames.size(); i++) {
-                    File dokDir = new File(dirNames.get(i));
+                for (var dirName : dirNames) {
+                    File dokDir = new File(dirName);
                     indexer.processFiles(dokDir, is_indexing);
                 }
+
+                // save euclidean lengths to disk
+                writeEuclideanData();
+
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 gui.displayInfoText(String.format("Indexing done in %.1f seconds.", elapsedTime / 1000.0));
                 index.cleanup();
             }
         } else {
             gui.displayInfoText("Index is loaded from disk");
+
+            // load euclidean length from disk
+            parseEuclideanData();
+        }
+    }
+
+    void writeEuclideanData() {
+        var builder = new StringBuilder();
+        for (var entry : Index.docLengthsEuclidean.entrySet()) {
+            builder.append(entry.getKey()).append(';').append(entry.getValue()).append('\n');
+        }
+
+        try (var writer = new BufferedWriter(new FileWriter("grade-c/euclideanDistances"))) {
+            writer.write(builder.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void parseEuclideanData() {
+        try (var reader = new BufferedReader(new FileReader("grade-c/euclideanDistances"))) {
+
+            var line = reader.readLine();
+            while (line != null) {
+                var split = line.split(";");
+                Index.docLengthsEuclidean.put(Integer.parseInt(split[0]), Double.parseDouble(split[1]));
+                line = reader.readLine();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

@@ -39,7 +39,7 @@ public class Searcher {
         this.index = index;
         this.kgIndex = kgIndex;
 
-        loadPagerank("grade-c/pagerank");
+        loadPagerank("grade-e/pagerank");
     }
 
     int skips = 0;
@@ -79,7 +79,7 @@ public class Searcher {
         var list = switch (queryType) {
             case INTERSECTION_QUERY -> intersectionQuery(query);
             case PHRASE_QUERY -> phraseQuery(query);
-            case RANKED_QUERY -> rankedQuery(query, rankingType);
+            case RANKED_QUERY -> rankedQuery(query, rankingType, normType);
         };
 
         System.out.println("docID skips: " + docIdSkips);
@@ -317,7 +317,7 @@ public class Searcher {
         return entry2Skip.docID <= otherDocId;
     }
 
-    private PostingsList rankedQuery(Query query, RankingType rankingType) {
+    private PostingsList rankedQuery(Query query, RankingType rankingType, NormalizationType normalizationType) {
         var cache = new HashMap<String, PostingsList>();
 
         if (query.size() == 0) {
@@ -349,10 +349,15 @@ public class Searcher {
 
                 var tf = cachedList.get(j).offsets.size();
 
+                var normalizationSize =
+                        normalizationType == NormalizationType.NUMBER_OF_WORDS ?
+                                Index.docLengths.get(entry.docID) :
+                                Index.docLengthsEuclidean.get(entry.docID);
+
                 // idf = log(N/df)
                 var idf = Math.log((double) index.docNames.size() / cachedList.size());
 
-                var tfIdfScore = tf * idf / index.docLengths.get(entry.docID);
+                var tfIdfScore = tf * idf / normalizationSize;
 
                 var docNameLookup = index.docNames.get(entry.docID);
                 var docName = Paths.get(docNameLookup).getFileName().toString();

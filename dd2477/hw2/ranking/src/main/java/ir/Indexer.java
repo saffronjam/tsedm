@@ -1,7 +1,7 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, 2017
  */
 
@@ -9,34 +9,47 @@ package ir;
 
 import java.io.*;
 import java.nio.charset.*;
+import java.util.HashMap;
 
 /**
  * Processes a directory structure and indexes all PDF and text files.
  */
 public class Indexer {
 
-    /** The index to be built up by this Indexer. */
+    /**
+     * The index to be built up by this Indexer.
+     */
     Index index;
 
-    /** K-gram index to be built up by this Indexer */
+    /**
+     * K-gram index to be built up by this Indexer
+     */
     KGramIndex kgIndex;
 
-    /** The next docID to be generated. */
+    /**
+     * The next docID to be generated.
+     */
     private int lastDocID = 0;
 
-    /** The patterns matching non-standard words (e-mail addresses, etc.) */
+    /**
+     * The patterns matching non-standard words (e-mail addresses, etc.)
+     */
     String patterns_file;
 
     /* ----------------------------------------------- */
 
-    /** Constructor */
+    /**
+     * Constructor
+     */
     public Indexer(Index index, KGramIndex kgIndex, String patterns_file) {
         this.index = index;
         this.kgIndex = kgIndex;
         this.patterns_file = patterns_file;
     }
 
-    /** Generates a new document identifier as an integer. */
+    /**
+     * Generates a new document identifier as an integer.
+     */
     private int generateDocID() {
         return lastDocID++;
     }
@@ -59,6 +72,10 @@ public class Indexer {
                     }
                 } else {
                     // First register the document and get a docID
+
+                    var tokenCounter = new HashMap<String, Long>();
+
+                    // 11396
                     int docID = generateDocID();
                     if (docID % 1000 == 0)
                         System.err.println("Indexed " + docID + " files");
@@ -69,13 +86,27 @@ public class Indexer {
                         while (tok.hasMoreTokens()) {
                             String token = tok.nextToken();
                             insertIntoIndex(docID, token, offset++);
+
+                            tokenCounter.put(token, tokenCounter.getOrDefault(token, 0L) + 1);
                         }
+
                         Index.docNames.put(docID, f.getPath());
                         Index.docLengths.put(docID, offset);
+
+                        // calculate euclidean length of document
+                        var lengthSqSum = 0.0;
+                        for (var entry : tokenCounter.entrySet()) {
+                            lengthSqSum += Math.pow(entry.getValue(), 2L);
+                        }
+                        var euclideanLength = Math.sqrt(lengthSqSum);
+                        Index.docLengthsEuclidean.put(docID, euclideanLength);
+
                         reader.close();
                     } catch (IOException e) {
                         System.err.println("Warning: IOException during indexing.");
                     }
+
+
                 }
             }
         }

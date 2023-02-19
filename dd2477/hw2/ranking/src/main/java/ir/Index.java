@@ -25,6 +25,8 @@ public interface Index {
      */
     HashMap<Integer, Integer> docLengths = new HashMap<>();
 
+    HashMap<Integer, Double> docLengthsEuclidean = new HashMap<>();
+
     /**
      * Inserts a token into the index.
      */
