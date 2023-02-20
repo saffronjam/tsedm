@@ -10,6 +10,7 @@ package ir;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * This is the main class for the search engine.
@@ -82,6 +83,9 @@ public class Engine {
 
     /* ----------------------------------------------- */
 
+    HashMap<String, Double> idfs = new HashMap<>();
+    HashMap<Integer, HashMap<String, Double>> tfIdfs = new HashMap<>();
+
     /**
      * Constructor.
      * Indexes all chosen directories and files
@@ -107,6 +111,58 @@ public class Engine {
                     indexer.processFiles(dokDir, is_indexing);
                 }
 
+
+                // convert tf-vector to tf-idf vector
+                int i = 0;
+                for (var counter : indexer.tokenCounters.values()) {
+                    if (i % 1000 == 0) {
+                        System.err.println("Calculated idf for " + i + " files");
+                    }
+                    i++;
+
+                    for (var token : counter.keySet()) {
+                        calculateIdf(token);
+                    }
+                }
+
+                i = 0;
+                for (var docTokenCounters : indexer.tokenCounters.entrySet()) {
+                    if (i % 1000 == 0) {
+                        System.err.println("Converted tf to tfIdf for " + i + " files");
+                    }
+                    i++;
+                    var docId = docTokenCounters.getKey();
+
+                    tfIdfs.put(docId, new HashMap<>());
+                    var list = tfIdfs.get(docId);
+
+                    for (var tokenCounter : docTokenCounters.getValue().entrySet()) {
+                        var token = tokenCounter.getKey();
+                        var tf = (double) tokenCounter.getValue();
+                        var idf = idfs.get(token);
+                        list.put(token, tf * idf);
+                    }
+                }
+
+                // calculate euclidean lengths
+                i = 0;
+                for (var entry : tfIdfs.entrySet()) {
+                    if (i % 1000 == 0) {
+                        System.err.println("Calculated euclidean distance for " + i + " files");
+                    }
+                    i++;
+
+                    var docId = entry.getKey();
+
+                    var sumSq = 0.0;
+                    for (var tokenTfIdfs : entry.getValue().entrySet()) {
+                        sumSq += Math.pow(tokenTfIdfs.getValue(), 2.0);
+                    }
+
+                    var result = Math.sqrt(sumSq);
+                    Index.docLengthsEuclidean.put(docId, result);
+                }
+
                 // save euclidean lengths to disk
                 writeEuclideanData();
 
@@ -120,6 +176,18 @@ public class Engine {
             // load euclidean length from disk
             parseEuclideanData();
         }
+    }
+
+    private void calculateIdf(String token) {
+        if (idfs.containsKey(token)) {
+            return;
+        }
+
+        var df = indexer.dfCounters.get(token);
+
+        var idf = Math.log((double) Index.docNames.size() / (double) df.size());
+
+        idfs.put(token, idf);
     }
 
     void writeEuclideanData() {

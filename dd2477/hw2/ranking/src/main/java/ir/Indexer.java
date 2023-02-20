@@ -10,6 +10,7 @@ package ir;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Processes a directory structure and indexes all PDF and text files.
@@ -35,6 +36,10 @@ public class Indexer {
      * The patterns matching non-standard words (e-mail addresses, etc.)
      */
     String patterns_file;
+
+    public HashMap<Integer, HashMap<String, Integer>> tokenCounters = new HashMap<>();
+    public HashMap<String, HashSet<Integer>> dfCounters = new HashMap<>();
+
 
     /* ----------------------------------------------- */
 
@@ -73,8 +78,6 @@ public class Indexer {
                 } else {
                     // First register the document and get a docID
 
-                    var tokenCounter = new HashMap<String, Long>();
-
                     // 11396
                     int docID = generateDocID();
                     if (docID % 1000 == 0)
@@ -87,19 +90,18 @@ public class Indexer {
                             String token = tok.nextToken();
                             insertIntoIndex(docID, token, offset++);
 
-                            tokenCounter.put(token, tokenCounter.getOrDefault(token, 0L) + 1);
+                            var dfCounter = dfCounters.getOrDefault(token, new HashSet<>());
+                            dfCounter.add(docID);
+                            dfCounters.put(token, dfCounter);
+
+                            var counter = tokenCounters.getOrDefault(docID, new HashMap<>());
+                            counter.put(token, counter.getOrDefault(token, 0) + 1);
+                            tokenCounters.put(docID, counter);
                         }
 
                         Index.docNames.put(docID, f.getPath());
                         Index.docLengths.put(docID, offset);
 
-                        // calculate euclidean length of document
-                        var lengthSqSum = 0.0;
-                        for (var entry : tokenCounter.entrySet()) {
-                            lengthSqSum += Math.pow(entry.getValue(), 2L);
-                        }
-                        var euclideanLength = Math.sqrt(lengthSqSum);
-                        Index.docLengthsEuclidean.put(docID, euclideanLength);
 
                         reader.close();
                     } catch (IOException e) {
