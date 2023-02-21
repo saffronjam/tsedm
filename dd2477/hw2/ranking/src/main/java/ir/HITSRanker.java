@@ -9,7 +9,6 @@ package ir;
 
 import java.util.*;
 import java.io.*;
-import java.util.stream.Collectors;
 
 
 public class HITSRanker {
@@ -48,7 +47,8 @@ public class HITSRanker {
 
     /* --------------------------------------------- */
 
-    HashMap<Integer, HashSet<Integer>> allLinks = new HashMap<>();
+    HashMap<Integer, HashSet<Integer>> allInLinks = new HashMap<>();
+    HashMap<Integer, HashSet<Integer>> allOutLinks = new HashMap<>();
 
     /**
      * Constructs the HITSRanker object
@@ -126,7 +126,13 @@ public class HITSRanker {
                     }
                 }
 
-                allLinks.put(linkId, links);
+                allOutLinks.put(linkId, links);
+
+                for (var link : links) {
+                    var inLinks = allInLinks.getOrDefault(link, new HashSet<>());
+                    inLinks.add(linkId);
+                    allInLinks.put(link, inLinks);
+                }
 
                 line = reader.readLine();
             }
@@ -159,6 +165,80 @@ public class HITSRanker {
         //
         // YOUR CODE HERE
         //
+
+        for (int i = 0; i < MAX_NUMBER_OF_STEPS; i++) {
+            var newAuthorities = new HashMap<Integer, Double>();
+            var newHubs = new HashMap<Integer, Double>();
+
+            for (var authority : authorities.entrySet()) {
+                var aId = authority.getKey();
+                newAuthorities.put(aId, 0.0);
+
+                var inLinks = allInLinks.get(aId);
+                if (inLinks != null) {
+                    for (var link : allInLinks.get(aId)) {
+                        var hVal = hubs.get(link);
+                        newAuthorities.put(aId, newAuthorities.getOrDefault(aId, 0.0) + hVal);
+                    }
+                }
+            }
+
+            for (var hub : hubs.entrySet()) {
+                var hId = hub.getKey();
+                newHubs.put(hId, 0.0);
+
+                var outLinks = allOutLinks.get(hId);
+                if (outLinks != null) {
+                    for (var link : outLinks) {
+                        var aVal = authorities.get(link);
+                        newHubs.put(hId, newHubs.getOrDefault(hId, 0.0) + aVal);
+                    }
+                }
+            }
+
+            // Normalize
+            var aScoreSumSq = 0.0;
+            var hScoreSumSq = 0.0;
+
+            for (var aVal : newAuthorities.values()) {
+                aScoreSumSq += Math.pow(aVal, 2.0);
+            }
+
+            for (var hVal : newHubs.values()) {
+                hScoreSumSq += Math.pow(hVal, 2.0);
+            }
+
+            var aNorm = Math.sqrt(aScoreSumSq);
+            var hNorm = Math.sqrt(hScoreSumSq);
+
+            newAuthorities.replaceAll((k, v) -> newAuthorities.get(k) / aNorm);
+            newHubs.replaceAll((k, v) -> newHubs.get(k) / hNorm);
+
+
+            var converged = converged(newAuthorities, newHubs, authorities, hubs);
+            if (converged) {
+                break;
+            }
+
+            authorities = newAuthorities;
+            hubs = newHubs;
+        }
+    }
+
+    private static boolean converged(HashMap<Integer, Double> authorities, HashMap<Integer, Double> hubs, HashMap<Integer, Double> prevAuthorities, HashMap<Integer, Double> prevHubs) {
+        var sum = 0.0;
+
+        for (var authority : authorities.entrySet()) {
+            sum += Math.abs(authority.getValue() - prevAuthorities.get(authority.getKey()));
+        }
+
+        for (var hub : hubs.entrySet()) {
+            sum += Math.abs(hub.getValue() - prevHubs.get(hub.getKey()));
+        }
+
+        System.out.println("diff: " + sum);
+
+        return sum < EPSILON;
     }
 
 
@@ -173,6 +253,7 @@ public class HITSRanker {
         //
         // YOUR CODE HERE
         //
+
         return null;
     }
 
