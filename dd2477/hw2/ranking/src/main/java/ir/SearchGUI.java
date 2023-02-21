@@ -20,25 +20,39 @@ import java.io.*;
  */
 public class SearchGUI extends JFrame {
 
-    /** The search engine. */
+    /**
+     * The search engine.
+     */
     Engine engine;
 
-    /** The query posed by the user. */
+    /**
+     * The query posed by the user.
+     */
     private Query query;
 
-    /** The results of a search query. */
+    /**
+     * The results of a search query.
+     */
     private PostingsList results;
 
-    /** The query type (either intersection, phrase, or ranked). */
+    /**
+     * The query type (either intersection, phrase, or ranked).
+     */
     QueryType queryType = QueryType.INTERSECTION_QUERY;
 
-    /** The ranking type (either tf-idf, pagerank, or combination). */
+    /**
+     * The ranking type (either tf-idf, pagerank, or combination).
+     */
     RankingType rankingType = RankingType.TF_IDF;
 
-    /** The type of normalization for tf-idf computation */
+    /**
+     * The type of normalization for tf-idf computation
+     */
     NormalizationType normType = NormalizationType.NUMBER_OF_WORDS;
 
-    /** Max number of results to display. */
+    /**
+     * Max number of results to display.
+     */
     static final int MAX_RESULTS = 10;
 
     /**
@@ -70,6 +84,7 @@ public class SearchGUI extends JFrame {
     JRadioButtonMenuItem rankedItem = new JRadioButtonMenuItem("Ranked retrieval");
     JRadioButtonMenuItem tfidfItem = new JRadioButtonMenuItem("tf-idf");
     JRadioButtonMenuItem pagerankItem = new JRadioButtonMenuItem("PageRank");
+    JRadioButtonMenuItem hitsItem = new JRadioButtonMenuItem("HITS");
     JRadioButtonMenuItem combinationItem = new JRadioButtonMenuItem("Combination");
     JRadioButtonMenuItem numberOfWordsItem = new JRadioButtonMenuItem("Number of words");
     JRadioButtonMenuItem euclideanLengthItem = new JRadioButtonMenuItem("Euclidean length");
@@ -109,6 +124,7 @@ public class SearchGUI extends JFrame {
         optionsMenu.add(rankedItem);
         rankingMenu.add(tfidfItem);
         rankingMenu.add(pagerankItem);
+        rankingMenu.add(hitsItem);
         rankingMenu.add(combinationItem);
         normalizationMenu.add(numberOfWordsItem);
         normalizationMenu.add(euclideanLengthItem);
@@ -117,6 +133,7 @@ public class SearchGUI extends JFrame {
         queries.add(rankedItem);
         ranking.add(tfidfItem);
         ranking.add(pagerankItem);
+        ranking.add(hitsItem);
         ranking.add(combinationItem);
         normalization.add(numberOfWordsItem);
         normalization.add(euclideanLengthItem);
@@ -249,6 +266,13 @@ public class SearchGUI extends JFrame {
         };
         pagerankItem.addActionListener(setPagerankRanking);
 
+        Action setHitsRanking = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                rankingType = RankingType.HITS;
+            }
+        };
+        hitsItem.addActionListener(setHitsRanking);
+
         Action setCombinationRanking = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 rankingType = RankingType.COMBINATION;
@@ -288,7 +312,7 @@ public class SearchGUI extends JFrame {
 
     /**
      * Displays the results in the results window.
-     * 
+     *
      * @param maxResultsToDisplay The results list is cut off after this many
      *                            results
      *                            have been displayed.
@@ -408,7 +432,9 @@ public class SearchGUI extends JFrame {
         }
         revalidate();
         repaint();
-    };
+    }
+
+    ;
 
     /**
      * Returns the filename at the end of a path.

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -32,12 +33,15 @@ public class Searcher {
 
     HashMap<String, Double> pagerank = new HashMap<>();
 
+    HITSRanker hitsRanker;
+
     /**
      * Constructor
      */
     public Searcher(Index index, KGramIndex kgIndex) {
         this.index = index;
         this.kgIndex = kgIndex;
+        this.hitsRanker = new HITSRanker("linksDavis.txt", "davisTitles.txt", index);
 
         loadPagerank("grade-e/pagerank");
     }
@@ -327,6 +331,37 @@ public class Searcher {
         var start = System.currentTimeMillis();
         var parsing = 0L;
 
+
+        if (rankingType == RankingType.HITS) {
+            var combined = new PostingsList("HITS");
+
+            for (int i = 0; i < query.size(); i++) {
+                var token = query.queryterm.get(i).term;
+
+                var postingsList = cache.get(token);
+                if (postingsList == null) {
+                    var parsingStart = System.currentTimeMillis();
+                    postingsList = index.getPostings(token);
+                    var parsingEnd = System.currentTimeMillis();
+                    parsing += (parsingEnd - parsingStart);
+
+                    cache.put(token, postingsList);
+                }
+
+                for (int j = 0; j < postingsList.size(); j++) {
+                    var entry = postingsList.get(j);
+
+                    var existing = combined.getByDocId(entry.docID);
+                    if (existing == null) {
+                        combined.add(new PostingsEntry(entry.docID, 0));
+                    }
+                }
+            }
+
+            var result = hitsRanker.rank(combined);
+            return result;
+        }
+
         var answer = new PostingsList("");
 
         for (int i = 0; i < query.size(); i++) {
@@ -370,6 +405,7 @@ public class Searcher {
                 entry.score = switch (rankingType) {
                     case TF_IDF -> tfIdfScore;
                     case PAGERANK -> pagerankScore;
+                    case HITS -> 0.0;
                     case COMBINATION -> combined;
                 };
 

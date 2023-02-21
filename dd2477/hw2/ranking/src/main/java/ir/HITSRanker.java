@@ -115,9 +115,6 @@ public class HITSRanker {
 
                 var linkId = Integer.parseInt(splits[0]);
 
-                hubs.put(linkId, 1.0);
-                authorities.put(linkId, 1.0);
-
                 var links = new HashSet<Integer>();
 
                 if (splits.length > 1) {
@@ -166,34 +163,41 @@ public class HITSRanker {
         // YOUR CODE HERE
         //
 
+
+        /// TODO LOOK AT THIS
+        for (var title : titles) {
+            hubs.put(titleToId.get(title), 1.0);
+            authorities.put(titleToId.get(title), 1.0);
+        }
+
         for (int i = 0; i < MAX_NUMBER_OF_STEPS; i++) {
             var newAuthorities = new HashMap<Integer, Double>();
             var newHubs = new HashMap<Integer, Double>();
 
-            for (var authority : authorities.entrySet()) {
-                var aId = authority.getKey();
-                newAuthorities.put(aId, 0.0);
+            for (var aId : authorities.keySet()) {
+                var score = 0.0;
 
                 var inLinks = allInLinks.get(aId);
                 if (inLinks != null) {
                     for (var link : allInLinks.get(aId)) {
-                        var hVal = hubs.get(link);
-                        newAuthorities.put(aId, newAuthorities.getOrDefault(aId, 0.0) + hVal);
+                        score += hubs.get(link);
                     }
                 }
+
+                newAuthorities.put(aId, score);
             }
 
-            for (var hub : hubs.entrySet()) {
-                var hId = hub.getKey();
-                newHubs.put(hId, 0.0);
+            for (var hId : hubs.keySet()) {
+                var score = 0.0;
 
                 var outLinks = allOutLinks.get(hId);
                 if (outLinks != null) {
                     for (var link : outLinks) {
-                        var aVal = authorities.get(link);
-                        newHubs.put(hId, newHubs.getOrDefault(hId, 0.0) + aVal);
+                        score += authorities.get(link);
                     }
                 }
+
+                newHubs.put(hId, score);
             }
 
             // Normalize
@@ -250,11 +254,32 @@ public class HITSRanker {
      * @return A list of postings ranked according to the hub and authority scores.
      */
     PostingsList rank(PostingsList post) {
-        //
-        // YOUR CODE HERE
-        //
+        // Get the titles of the documents in the postings list
+        String[] titles = new String[post.size()];
+        for (int i = 0; i < post.size(); i++) {
+            titles[i] = Index.docNames.get(post.get(i).docID);
+        }
 
-        return null;
+        // perform HITS iterations until convergence
+        iterate(titles);
+
+        // sort the documents according to their hub and authority scores
+        HashMap<Integer, Double> scores = new HashMap<>();
+        for (int i = 0; i < post.size(); i++) {
+            var docID = post.get(i).docID;
+            var title = titleToId.get(titles[i]);
+            scores.put(docID, authorities.get(title) + hubs.get(title));
+        }
+
+        scores = sortHashMapByValue(scores);
+
+        // create a new postings list and add the documents in the sorted order
+        PostingsList ranked = new PostingsList(post.getToken());
+        for (int docID : scores.keySet()) {
+            ranked.add(docID, scores.get(docID), 0);
+        }
+
+        return ranked;
     }
 
 
@@ -268,7 +293,7 @@ public class HITSRanker {
         if (map == null) {
             return null;
         } else {
-            List<Map.Entry<Integer, Double>> list = new ArrayList<Map.Entry<Integer, Double>>(map.entrySet());
+            List<Map.Entry<Integer, Double>> list = new ArrayList<>(map.entrySet());
 
             list.sort((o1, o2) -> (o2.getValue()).compareTo(o1.getValue()));
 
