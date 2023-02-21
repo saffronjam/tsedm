@@ -71,9 +71,9 @@ public class PageRank {
 		double diff;
 		long ms;
 		long N;
-		Integer[] sortedIndices;
+		int[] sortedIndices;
 
-		public MonteCarloResult(double diff, long ms, long N, Integer[] sortedIndices) {
+		public MonteCarloResult(double diff, long ms, long N, int[] sortedIndices) {
 			this.diff = diff;
 			this.ms = ms;
 			this.N = N;
@@ -157,9 +157,9 @@ public class PageRank {
 		monteCarlo5Wikipedia(noOfDocs);
 	}
 
-	boolean sameUntilIndex(Integer[] a1, Integer[] a2, int index) {
+	boolean sameUntilIndex(int[] a1, int[] a2, int index) {
 		for (int i = 0; i < index; i++) {
-			if (!a1[i].equals(a2[i])) {
+			if (a1[i] != a2[i]) {
 				System.out.println("    was same until (exluding): " + i);
 				return false;
 			}
@@ -526,6 +526,18 @@ public class PageRank {
 		return new MonteCarloResult(diff, then - now, N, largest);
 	}
 
+	class StableCheckResult {
+		boolean stable;
+		int[] indices;
+		double[] values;
+
+		public StableCheckResult(boolean stable, int[] largestIndices, double[] largest30) {
+			this.stable = stable;
+			this.indices = largestIndices;
+			this.values = largest30;
+		}
+	}
+
 	void monteCarlo5Wikipedia(int numberOfDocs) {
 		System.out.println("Starting monte carlo 5 (wikipedia)");
 		var now = System.currentTimeMillis();
@@ -536,7 +548,7 @@ public class PageRank {
 		var totalVisits = 0;
 		var stableCounter = 0;
 
-		Integer[] lastSortedIndices = null;
+		int[] lastSortedIndices = null;
 
 		for (int i = 0;; i++) {
 			var docId = randomizer.nextInt(numberOfDocs);
@@ -556,33 +568,28 @@ public class PageRank {
 			if (i % 10000 == 0) {
 				System.out.println("  checking if wikipedia is stable at i=" + i);
 
-				var counterCopy = Arrays.copyOf(counter, counter.length);
+				var result = checkIfStable(counter, totalVisits, lastSortedIndices);
+				if (result.stable) {
+					System.out.println("Wikipedia seems to be stable");
+					if (++stableCounter > 4) {
 
-				for (int j = 0; j < counterCopy.length; j++) {
-					counterCopy[j] /= totalVisits;
-				}
-
-				var largest30 = new double[30];
-				var largest = sortIndices(counterCopy);
-				for (int j = 0; j < 30; j++) {
-					largest30[j] = counterCopy[largest[j]];
-				}
-
-				if (lastSortedIndices != null) {
-					var sameFirst30 = sameUntilIndex(largest, lastSortedIndices, 30);
-					if (sameFirst30) {
-						System.out.println("Wikipedia seems to be stable");
-						if (++stableCounter == 8) {
-							writeData(counterCopy, "grade-b/wiki-montecarlo5");
-							writeData(largest30, "grade-b/wiki-30-montecarlo5");
-							break;
+						try (var writer = new BufferedWriter(new FileWriter("grade-b/wiki-30-montecarlo5"))) {
+							for (int j = 0; j < 30; j++) {
+								writer.write(docTitles[Integer.parseInt(docName[result.indices[j]])] + ";"
+										+ result.values[j] + "\n");
+							}
+						} catch (Exception e) {
+							System.out.println("failed to write to file: " + e.getMessage());
+							System.out.println(e.getStackTrace());
 						}
-					} else {
-						System.out.println("Wikipedia is NOT stable");
-						stableCounter = 0;
+
+						break;
 					}
+				} else {
+					System.out.println("Wikipedia is NOT stable");
+					stableCounter = 0;
 				}
-				lastSortedIndices = largest;
+				lastSortedIndices = result.indices;
 			}
 
 		}
@@ -611,7 +618,28 @@ public class PageRank {
 		}
 	}
 
-	Integer[] sortIndices(double[] arr) {
+	StableCheckResult checkIfStable(double[] counter, int totalVisits, int[] lastSortedIndices) {
+		var scores = Arrays.copyOf(counter, counter.length);
+
+		for (int i = 0; i < scores.length; i++) {
+			scores[i] /= totalVisits;
+		}
+
+		var largest30 = new double[30];
+		var largestIndices = sortIndices(scores);
+		for (int j = 0; j < 30; j++) {
+			largest30[j] = scores[largestIndices[j]];
+		}
+
+		if (lastSortedIndices != null) {
+			var sameFirst30 = sameUntilIndex(largestIndices, lastSortedIndices, 30);
+			return new StableCheckResult(sameFirst30, largestIndices, largest30);
+		}
+
+		return new StableCheckResult(false, largestIndices, largest30);
+	}
+
+	int[] sortIndices(double[] arr) {
 		var indices = new Integer[arr.length];
 		for (int i = 0; i < arr.length; i++) {
 			indices[i] = i;
@@ -619,7 +647,7 @@ public class PageRank {
 
 		Arrays.sort(indices, (i1, i2) -> Double.compare(arr[i2], arr[i1]));
 
-		return indices;
+		return Arrays.stream(indices).mapToInt(i -> i).toArray();
 	}
 
 	double arrayDiff(double[] prob1, double[] prob2) {
