@@ -316,17 +316,17 @@ public class PageRank {
 		}
 
 		var largest30 = new double[30];
-		var largest = sortIndices(prob);
+		var indices = sortIndices(prob);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = prob[largest[i]];
+			largest30[i] = prob[indices[i]];
 		}
 
 		var then = System.currentTimeMillis();
 
 		System.out.println("\ntook: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
-		writeData(prob, "grade-e/pagerank");
-		writeData(largest30, "grade-e/30-pagerank");
+		writePageRankData(prob, "grade-e/pagerank");
+		writeTop30Data(largest30, indices, "grade-e/30-pagerank");
 	}
 
 	double getDiff(double[] largest30) {
@@ -371,17 +371,17 @@ public class PageRank {
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(counter);
+		var indices = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = counter[largest[i]];
+			largest30[i] = counter[indices[i]];
 		}
 
 		writeData(counter, "grade-b/montecarlo1-" + N);
-		writeData(largest30, "grade-b/30-montecarlo1-" + N);
+		writeTop30Data(largest30, indices, "grade-b/30-montecarlo1-" + N);
 
 		var diff = getDiff(largest30);
 
-		return new MonteCarloResult(diff, then - now, N, largest);
+		return new MonteCarloResult(diff, then - now, N, indices);
 	}
 
 	MonteCarloResult monteCarlo2(int numberOfDocs, long N) {
@@ -416,17 +416,17 @@ public class PageRank {
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(counter);
+		var indices = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = counter[largest[i]];
+			largest30[i] = counter[indices[i]];
 		}
 
 		writeData(counter, "grade-b/montecarlo2-" + N);
-		writeData(largest30, "grade-b/30-montecarlo2-" + N);
+		writeTop30Data(largest30, indices, "grade-b/30-montecarlo2-" + N);
 
 		var diff = getDiff(largest30);
 
-		return new MonteCarloResult(diff, then - now, N, largest);
+		return new MonteCarloResult(diff, then - now, N, indices);
 	}
 
 	MonteCarloResult monteCarlo4(int numberOfDocs, long N) {
@@ -464,17 +464,17 @@ public class PageRank {
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(counter);
+		var indices = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = counter[largest[i]];
+			largest30[i] = counter[indices[i]];
 		}
 
 		writeData(counter, "grade-b/montecarlo4-" + N);
-		writeData(largest30, "grade-b/30-montecarlo4-" + N);
+		writeTop30Data(largest30, indices, "grade-b/30-montecarlo4-" + N);
 
 		var diff = getDiff(largest30);
 
-		return new MonteCarloResult(diff, then - now, N, largest);
+		return new MonteCarloResult(diff, then - now, N, indices);
 	}
 
 	MonteCarloResult monteCarlo5(int numberOfDocs, long N) {
@@ -513,17 +513,17 @@ public class PageRank {
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(counter);
+		var indices = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = counter[largest[i]];
+			largest30[i] = counter[indices[i]];
 		}
 
 		writeData(counter, "grade-b/montecarlo5-" + N);
-		writeData(largest30, "grade-b/30-montecarlo5-" + N);
+		writeTop30Data(largest30, indices, "grade-b/30-montecarlo5-" + N);
 
 		var diff = getDiff(largest30);
 
-		return new MonteCarloResult(diff, then - now, N, largest);
+		return new MonteCarloResult(diff, then - now, N, indices);
 	}
 
 	class StableCheckResult {
@@ -571,18 +571,8 @@ public class PageRank {
 				var result = checkIfStable(counter, totalVisits, lastSortedIndices);
 				if (result.stable) {
 					System.out.println("Wikipedia seems to be stable");
-					if (++stableCounter > 4) {
-
-						try (var writer = new BufferedWriter(new FileWriter("grade-b/wiki-30-montecarlo5"))) {
-							for (int j = 0; j < 30; j++) {
-								writer.write(docTitles[Integer.parseInt(docName[result.indices[j]])] + ";"
-										+ result.values[j] + "\n");
-							}
-						} catch (Exception e) {
-							System.out.println("failed to write to file: " + e.getMessage());
-							System.out.println(e.getStackTrace());
-						}
-
+					if (++stableCounter > 5) {
+						writeTop30Data(result.values, result.indices, "grade-b/wiki-30-montecarlo5");
 						break;
 					}
 				} else {
@@ -610,7 +600,37 @@ public class PageRank {
 
 		try (var writer = new BufferedWriter(new FileWriter(file))) {
 			for (int i = 0; i < values.length; i++) {
+				writer.write(docName[i] + ";" + values[i] + "\n");
+			}
+		} catch (Exception e) {
+			System.out.println("failed to write to file: " + e.getMessage());
+			System.out.println(e.getStackTrace());
+		}
+	}
+
+	void writePageRankData(double[] values, String file) {
+		if (!writeData) {
+			return;
+		}
+
+		try (var writer = new BufferedWriter(new FileWriter(file))) {
+			for (int i = 0; i < values.length; i++) {
 				writer.write(docTitles[Integer.parseInt(docName[i])] + ";" + values[i] + "\n");
+			}
+		} catch (Exception e) {
+			System.out.println("failed to write to file: " + e.getMessage());
+			System.out.println(e.getStackTrace());
+		}
+	}
+
+	void writeTop30Data(double[] values, int[] indices, String file) {
+		if (!writeData) {
+			return;
+		}
+
+		try (var writer = new BufferedWriter(new FileWriter(file))) {
+			for (int i = 0; i < values.length; i++) {
+				writer.write(docTitles[Integer.parseInt(docName[indices[i]])] + ";" + values[i] + "\n");
 			}
 		} catch (Exception e) {
 			System.out.println("failed to write to file: " + e.getMessage());
