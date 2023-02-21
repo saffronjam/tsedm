@@ -17,6 +17,13 @@
             "request": "launch",
             "mainClass": "PageRank",
             "args": ["linksSlides.txt"]
+        },
+        {
+            "type": "java",
+            "name": "wiki",
+            "request": "launch",
+            "mainClass": "PageRank",
+            "args": ["linksSvwiki.txt"]
         }
     ]
 }

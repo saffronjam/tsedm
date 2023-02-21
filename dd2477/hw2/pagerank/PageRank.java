@@ -56,12 +56,35 @@ public class PageRank {
 
 	/* --------------------------------------------- */
 
+	int noOfDocs;
+
 	final static boolean doNormalPagerank = false;
+
+	boolean isWikipedia;
+
+	final static boolean writeData = true;
+	final static boolean writeResult = true;
 
 	final static double[] pagerank30 = new double[30];
 
+	public class MonteCarloResult {
+		double diff;
+		long ms;
+		long N;
+		Integer[] sortedIndices;
+
+		public MonteCarloResult(double diff, long ms, long N, Integer[] sortedIndices) {
+			this.diff = diff;
+			this.ms = ms;
+			this.N = N;
+			this.sortedIndices = sortedIndices;
+		}
+	}
+
 	public PageRank(String filename) {
-		int noOfDocs = readDocs(filename);
+		isWikipedia = filename.contains("linksSvwiki");
+
+		noOfDocs = readDocs(filename);
 		readTitles();
 
 		if (doNormalPagerank) {
@@ -84,23 +107,78 @@ public class PageRank {
 				System.exit(1);
 			}
 
-			var options = new long[] { noOfDocs, noOfDocs * 5, noOfDocs * 10, noOfDocs * 100 };
-
-			for (var N : options) {
-				System.out.println("\nstarting monte carlo round with N: " + N);
-
-				var diff1 = monteCarlo1(noOfDocs, 1000, N);
-				System.out.println("diff: " + new DecimalFormat("0.000000").format(diff1));
-
-				var diff2 = monteCarlo2(noOfDocs, 1000, N);
-				System.out.println("diff: " + new DecimalFormat("0.000000").format(diff2));
-
-				var diff4 = monteCarlo4(noOfDocs, 1000, N);
-				System.out.println("diff: " + new DecimalFormat("0.000000").format(diff4));
-
-				var diff5 = monteCarlo5(noOfDocs, 1000, N);
-				System.out.println("diff: " + new DecimalFormat("0.000000").format(diff5));
+			if (isWikipedia) {
+				runMonteCarloWikipedia();
+			} else {
+				long[] options = new long[] {
+						noOfDocs / 25,
+						noOfDocs / 5,
+						noOfDocs,
+						noOfDocs * 5,
+						noOfDocs * 25,
+						noOfDocs * 125,
+						noOfDocs * 625,
+				};
+				runAllMonteCarloDavis(options);
 			}
+
+		}
+	}
+
+	void runAllMonteCarloDavis(long[] options) {
+		var results = new MonteCarloResult[4][];
+		for (int i = 0; i < results.length; i++) {
+			results[i] = new MonteCarloResult[options.length];
+		}
+
+		for (int i = 0; i < options.length; i++) {
+			var N = options[i];
+
+			System.out.println("\nstarting monte carlo round with N: " + N);
+
+			var res1 = monteCarlo1(noOfDocs, N);
+			var res2 = monteCarlo2(noOfDocs, N);
+			var res3 = monteCarlo4(noOfDocs, N);
+			var res4 = monteCarlo5(noOfDocs, N);
+
+			results[0][i] = res1;
+			results[1][i] = res2;
+			results[2][i] = res3;
+			results[3][i] = res4;
+		}
+
+		for (int i = 0; i < 4; i++) {
+			var monteCarloId = i < 2 ? i + 1 : i + 2;
+			writeDavisResult(monteCarloId, results[i]);
+		}
+	}
+
+	void runMonteCarloWikipedia() {
+		monteCarlo5Wikipedia(noOfDocs);
+	}
+
+	boolean sameUntilIndex(Integer[] a1, Integer[] a2, int index) {
+		for (int i = 0; i < index; i++) {
+			if (!a1[i].equals(a2[i])) {
+				System.out.println("    was same until (exluding): " + i);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void writeDavisResult(int monteCarloId, MonteCarloResult[] results) {
+		if (!writeResult) {
+			return;
+		}
+
+		try (var writer = new BufferedWriter(new FileWriter("grade-b/result-" + monteCarloId))) {
+			for (var result : results) {
+				writer.write("" + result.N + ";" + result.diff + "\n");
+			}
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+			System.exit(1);
 		}
 	}
 
@@ -167,7 +245,9 @@ public class PageRank {
 	/* --------------------------------------------- */
 
 	void readTitles() {
-		try (BufferedReader in = new BufferedReader(new FileReader("davisTitles.txt"))) {
+		var titles = isWikipedia ? "svwikiTitles.txt" : "davisTitles.txt";
+
+		try (BufferedReader in = new BufferedReader(new FileReader(titles))) {
 			System.err.print("Reading file... ");
 
 			var line = in.readLine();
@@ -257,226 +337,270 @@ public class PageRank {
 		return diff;
 	}
 
-	double monteCarlo1(int numberOfDocs, int maxIterations, long N) {
+	MonteCarloResult monteCarlo1(int numberOfDocs, long N) {
 		System.out.println("Starting monte carlo 1 for N: " + N);
 
 		var now = System.currentTimeMillis();
 
 		var randomizer = new Random();
-		var terminate = 1.0 - C;
-		var counter = new HashMap<Integer, Integer>();
+
+		var counter = new double[numberOfDocs];
 
 		// simulate N walks
 		for (long i = 0; i < N; i++) {
-			var start = randomizer.nextInt(numberOfDocs);
+			var docId = randomizer.nextInt(numberOfDocs);
 
-			var current = start;
-
-			while (true) {
-				var randomNum = randomizer.nextDouble(1.0);
-
-				var shouldTerminate = randomNum > terminate;
-				if (shouldTerminate) {
-					break;
-				} else {
-					var neighbors = link.getOrDefault(current, new HashMap<>());
-					if (neighbors.size() != 0) {
-						var randomNeighbor = randomizer.nextInt(neighbors.size());
-						current = (Integer) neighbors.keySet().toArray()[randomNeighbor];
-					}
+			while (randomizer.nextDouble(1.0) > BORED) {
+				var neighbors = link.get(docId);
+				if (neighbors == null) {
+					docId = randomizer.nextInt(numberOfDocs);
+					continue;
 				}
+				var outlinks = neighbors.keySet();
+				docId = (int) outlinks.toArray()[randomizer.nextInt(outlinks.size())];
 			}
 
-			counter.put(current, counter.getOrDefault(current, 0) + 1);
+			counter[docId]++;
 		}
 
-		var prob = new double[numberOfDocs];
-
-		for (var entry : counter.entrySet()) {
-			prob[entry.getKey()] = entry.getValue() / (double) N;
+		for (int i = 0; i < counter.length; i++) {
+			counter[i] /= (double) N;
 		}
 
 		var then = System.currentTimeMillis();
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(prob);
+		var largest = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = prob[largest[i]];
+			largest30[i] = counter[largest[i]];
 		}
 
-		writeData(prob, "grade-b/montecarlo1");
-		writeData(largest30, "grade-b/30-montecarlo1");
+		writeData(counter, "grade-b/montecarlo1-" + N);
+		writeData(largest30, "grade-b/30-montecarlo1-" + N);
 
 		var diff = getDiff(largest30);
 
-		return diff;
+		return new MonteCarloResult(diff, then - now, N, largest);
 	}
 
-	double monteCarlo2(int numberOfDocs, int maxIterations, long N) {
+	MonteCarloResult monteCarlo2(int numberOfDocs, long N) {
 		System.out.println("Starting monte carlo 2 for N: " + N);
 		var now = System.currentTimeMillis();
 
 		var randomizer = new Random();
-		var terminate = 1.0 - C;
-		var counter = new HashMap<Integer, Integer>();
+		var counter = new double[numberOfDocs];
 
 		// simulate N walks
 		for (long i = 0; i < N; i++) {
-			var current = (int) (i % numberOfDocs);
+			var docId = (int) (i % numberOfDocs);
 
-			while (true) {
-				var randomNum = randomizer.nextDouble(1.0);
-
-				var shouldTerminate = randomNum > terminate;
-				if (shouldTerminate) {
-					break;
-				} else {
-					var neighbors = link.getOrDefault(current, new HashMap<>());
-					if (neighbors.size() != 0) {
-						var randomNeighbor = randomizer.nextInt(neighbors.size());
-						current = (Integer) neighbors.keySet().toArray()[randomNeighbor];
-					}
+			while (randomizer.nextDouble(1.0) > BORED) {
+				var neighbors = link.get(docId);
+				if (neighbors == null) {
+					docId = randomizer.nextInt(numberOfDocs);
+					continue;
 				}
+				var outlinks = neighbors.keySet();
+				docId = (int) outlinks.toArray()[randomizer.nextInt(outlinks.size())];
 			}
 
-			counter.put(current, counter.getOrDefault(current, 0) + 1);
+			counter[docId]++;
 		}
 
-		var prob = new double[numberOfDocs];
-
-		for (var entry : counter.entrySet()) {
-			prob[entry.getKey()] = entry.getValue() / (double) N;
+		for (int i = 0; i < counter.length; i++) {
+			counter[i] /= (double) N;
 		}
 
 		var then = System.currentTimeMillis();
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(prob);
+		var largest = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = prob[largest[i]];
+			largest30[i] = counter[largest[i]];
 		}
 
-		writeData(prob, "grade-b/montecarlo2");
-		writeData(largest30, "grade-b/30-montecarlo2");
+		writeData(counter, "grade-b/montecarlo2-" + N);
+		writeData(largest30, "grade-b/30-montecarlo2-" + N);
 
 		var diff = getDiff(largest30);
 
-		return diff;
+		return new MonteCarloResult(diff, then - now, N, largest);
 	}
 
-	double monteCarlo4(int numberOfDocs, int maxIterations, long N) {
+	MonteCarloResult monteCarlo4(int numberOfDocs, long N) {
 		System.out.println("Starting monte carlo 4 for N: " + N);
 		var now = System.currentTimeMillis();
 
 		var randomizer = new Random();
-		var terminate = 1.0 - C;
-		var counter = new HashMap<Integer, Integer>();
+		var counter = new double[noOfDocs];
+		var totalVisits = 0;
 
 		// simulate N walks
 		for (long i = 0; i < N; i++) {
-			var current = (int) (i % numberOfDocs);
+			var docId = (int) (i % numberOfDocs);
 
-			while (true) {
+			while (randomizer.nextDouble(1.0) > BORED) {
 				// count every node along the path
-				counter.put(current, counter.getOrDefault(current, 0) + 1);
+				counter[docId]++;
+				totalVisits++;
 
-				var randomNum = randomizer.nextDouble(1.0);
-
-				var shouldTerminate = randomNum > terminate;
-
-				var neighbors = link.getOrDefault(current, new HashMap<>());
-				if (neighbors.size() == 0 || shouldTerminate) {
+				var neighbors = link.get(docId);
+				if (neighbors == null) {
 					break;
-				} else {
-					var randomNeighbor = randomizer.nextInt(neighbors.size());
-					current = (Integer) neighbors.keySet().toArray()[randomNeighbor];
 				}
+				var outlinks = neighbors.keySet();
+				docId = (int) outlinks.toArray()[randomizer.nextInt(outlinks.size())];
 			}
 
 		}
 
-		var prob = new double[numberOfDocs];
-
-		for (var entry : counter.entrySet()) {
-			prob[entry.getKey()] = entry.getValue() / (double) N;
+		for (int i = 0; i < counter.length; i++) {
+			counter[i] /= (double) totalVisits;
 		}
 
 		var then = System.currentTimeMillis();
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(prob);
+		var largest = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = prob[largest[i]];
+			largest30[i] = counter[largest[i]];
 		}
 
-		writeData(prob, "grade-b/montecarlo2");
-		writeData(largest30, "grade-b/30-montecarlo2");
+		writeData(counter, "grade-b/montecarlo4-" + N);
+		writeData(largest30, "grade-b/30-montecarlo4-" + N);
 
 		var diff = getDiff(largest30);
 
-		return diff;
+		return new MonteCarloResult(diff, then - now, N, largest);
 	}
 
-	double monteCarlo5(int numberOfDocs, int maxIterations, long N) {
+	MonteCarloResult monteCarlo5(int numberOfDocs, long N) {
 		System.out.println("Starting monte carlo 5 for N: " + N);
 		var now = System.currentTimeMillis();
 
 		var randomizer = new Random();
-		var terminate = 1.0 - C;
-		var counter = new HashMap<Integer, Integer>();
+		var counter = new double[numberOfDocs];
+
+		var totalVisits = 0;
 
 		// simulate N walks
 		for (long i = 0; i < N; i++) {
-			var start = randomizer.nextInt(numberOfDocs);
+			var docId = randomizer.nextInt(numberOfDocs);
 
-			var current = start;
-
-			while (true) {
+			while (randomizer.nextDouble(1.0) > BORED) {
 				// count every node along the path
-				counter.put(current, counter.getOrDefault(current, 0) + 1);
+				counter[docId]++;
+				totalVisits++;
 
-				var randomNum = randomizer.nextDouble(1.0);
-
-				var shouldTerminate = randomNum > terminate;
-
-				var neighbors = link.getOrDefault(current, new HashMap<>());
-				if (neighbors.size() == 0 || shouldTerminate) {
+				var neighbors = link.get(docId);
+				if (neighbors == null) {
 					break;
-				} else {
-					var randomNeighbor = randomizer.nextInt(neighbors.size());
-					current = (Integer) neighbors.keySet().toArray()[randomNeighbor];
 				}
+				var outlinks = neighbors.keySet();
+				docId = (int) outlinks.toArray()[randomizer.nextInt(outlinks.size())];
 			}
 
 		}
 
-		var prob = new double[numberOfDocs];
-
-		for (var entry : counter.entrySet()) {
-			prob[entry.getKey()] = entry.getValue() / (double) N;
+		for (int i = 0; i < counter.length; i++) {
+			counter[i] /= totalVisits;
 		}
 
 		var then = System.currentTimeMillis();
 		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
 
 		var largest30 = new double[30];
-		var largest = sortIndices(prob);
+		var largest = sortIndices(counter);
 		for (int i = 0; i < 30; i++) {
-			largest30[i] = prob[largest[i]];
+			largest30[i] = counter[largest[i]];
 		}
 
-		writeData(prob, "grade-b/montecarlo2");
-		writeData(largest30, "grade-b/30-montecarlo2");
+		writeData(counter, "grade-b/montecarlo5-" + N);
+		writeData(largest30, "grade-b/30-montecarlo5-" + N);
 
 		var diff = getDiff(largest30);
 
-		return diff;
+		return new MonteCarloResult(diff, then - now, N, largest);
+	}
+
+	void monteCarlo5Wikipedia(int numberOfDocs) {
+		System.out.println("Starting monte carlo 5 (wikipedia)");
+		var now = System.currentTimeMillis();
+
+		var randomizer = new Random();
+		var counter = new double[numberOfDocs];
+
+		var totalVisits = 0;
+		var stableCounter = 0;
+
+		Integer[] lastSortedIndices = null;
+
+		for (int i = 0;; i++) {
+			var docId = randomizer.nextInt(numberOfDocs);
+
+			while (randomizer.nextDouble(1.0) > BORED) {
+				counter[docId]++;
+				totalVisits++;
+
+				var neighbors = link.get(docId);
+				if (neighbors == null) {
+					break;
+				}
+				var outlinks = neighbors.keySet();
+				docId = (int) outlinks.toArray()[randomizer.nextInt(outlinks.size())];
+			}
+
+			if (i % 10000 == 0) {
+				System.out.println("  checking if wikipedia is stable at i=" + i);
+
+				var counterCopy = Arrays.copyOf(counter, counter.length);
+
+				for (int j = 0; j < counterCopy.length; j++) {
+					counterCopy[j] /= totalVisits;
+				}
+
+				var largest30 = new double[30];
+				var largest = sortIndices(counterCopy);
+				for (int j = 0; j < 30; j++) {
+					largest30[j] = counterCopy[largest[j]];
+				}
+
+				if (lastSortedIndices != null) {
+					var sameFirst30 = sameUntilIndex(largest, lastSortedIndices, 30);
+					if (sameFirst30) {
+						System.out.println("Wikipedia seems to be stable");
+						if (++stableCounter == 8) {
+							writeData(counterCopy, "grade-b/wiki-montecarlo5");
+							writeData(largest30, "grade-b/wiki-30-montecarlo5");
+							break;
+						}
+					} else {
+						System.out.println("Wikipedia is NOT stable");
+						stableCounter = 0;
+					}
+				}
+				lastSortedIndices = largest;
+			}
+
+		}
+
+		for (int i = 0; i < counter.length; i++) {
+			counter[i] /= totalVisits;
+		}
+
+		var then = System.currentTimeMillis();
+		System.out.println("took: " + new DecimalFormat("0.00").format((double) (then - now) / 1000.0) + " seconds");
+
 	}
 
 	void writeData(double[] values, String file) {
+		if (!writeData) {
+			return;
+		}
+
 		try (var writer = new BufferedWriter(new FileWriter(file))) {
 			for (int i = 0; i < values.length; i++) {
 				writer.write(docTitles[Integer.parseInt(docName[i])] + ";" + values[i] + "\n");
