@@ -145,14 +145,14 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
       INSERT YOUR CODE HERE
       */
 
-      if (promisedBallot <= acc.acceptBallot){
+      if (promisedBallot <= acc.acceptBallot) {
         promisedBallot = acc.acceptBallot
         acceptedBallot = acc.acceptBallot
 
         acceptedValue = Some(acc.proposedValue)
 
         trigger(PL_Send(src, Accepted(acc.acceptBallot)) -> plink)
-      }else {
+      } else {
         trigger(PL_Send(src, Nack(acc.acceptBallot)) -> plink)
       }
     };
@@ -162,7 +162,7 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
       INSERT YOUR CODE HERE
       */
 
-      if (!decided){
+      if (!decided) {
         trigger(C_Decide(dec.decidedValue) -> consensus)
         decided = true
       }
@@ -185,6 +185,7 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
             proposedValue = value
           }
 
+          println("Process " + rank + " accepts " + proposedValue)
           trigger(BEB_Broadcast(Accept((round, rank), proposedValue)) -> beb)
         }
       }
@@ -197,7 +198,8 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
         */
 
         numOfAccepts += 1
-        if (numOfAccepts == (numProcesses +1)/2){
+        if (numOfAccepts == (numProcesses + 1) / 2) {
+          println("Proccess " + rank + " decided " + proposedValue);
           trigger(BEB_Broadcast(Decided(proposedValue)) -> beb)
         }
       }
