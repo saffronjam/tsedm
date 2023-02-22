@@ -7,6 +7,7 @@
 
 package ir;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.io.*;
 
@@ -37,18 +38,18 @@ public class HITSRanker {
     /**
      * Sparse vector containing hub scores
      */
-    HashMap<Integer, Double> hubs = new HashMap<>();
+    HashMap<Integer, Double> hubs;
 
     /**
      * Sparse vector containing authority scores
      */
-    HashMap<Integer, Double> authorities = new HashMap<>();
+    HashMap<Integer, Double> authorities;
 
 
     /* --------------------------------------------- */
 
-    HashMap<Integer, HashSet<Integer>> allInLinks = new HashMap<>();
-    HashMap<Integer, HashSet<Integer>> allOutLinks = new HashMap<>();
+    HashMap<Integer, HashSet<Integer>> allInLinks;
+    HashMap<Integer, HashSet<Integer>> allOutLinks;
 
     /**
      * Constructs the HITSRanker object
@@ -107,6 +108,10 @@ public class HITSRanker {
         //
         // YOUR CODE HERE
         //
+
+        allInLinks = new HashMap<>();
+        allOutLinks = new HashMap<>();
+
         try (var reader = new BufferedReader(new FileReader(linksFilename))) {
 
             var line = reader.readLine();
@@ -163,11 +168,29 @@ public class HITSRanker {
         // YOUR CODE HERE
         //
 
+        authorities = new HashMap<>();
+        hubs = new HashMap<>();
 
-        /// TODO LOOK AT THIS
         for (var title : titles) {
-            hubs.put(titleToId.get(title), 1.0);
-            authorities.put(titleToId.get(title), 1.0);
+            var id = titleToId.get(title);
+
+            if (id == null) {
+                System.out.println("missed title: " + title);
+                continue;
+            }
+
+            authorities.put(id, 1.0);
+            hubs.put(id, 1.0);
+
+            for (var link : allInLinks.getOrDefault(id, new HashSet<>())) {
+                authorities.put(link, 1.0);
+                hubs.put(link, 1.0);
+            }
+
+            for (var link : allOutLinks.getOrDefault(id, new HashSet<>())) {
+                authorities.put(link, 1.0);
+                hubs.put(link, 1.0);
+            }
         }
 
         for (int i = 0; i < MAX_NUMBER_OF_STEPS; i++) {
@@ -180,7 +203,10 @@ public class HITSRanker {
                 var inLinks = allInLinks.get(aId);
                 if (inLinks != null) {
                     for (var link : allInLinks.get(aId)) {
-                        score += hubs.get(link);
+                        var hVal = hubs.get(link);
+                        if (hVal != null) {
+                            score += hubs.get(link);
+                        }
                     }
                 }
 
@@ -193,7 +219,10 @@ public class HITSRanker {
                 var outLinks = allOutLinks.get(hId);
                 if (outLinks != null) {
                     for (var link : outLinks) {
-                        score += authorities.get(link);
+                        var aVal = authorities.get(link);
+                        if (aVal != null) {
+                            score += aVal;
+                        }
                     }
                 }
 
@@ -257,7 +286,7 @@ public class HITSRanker {
         // Get the titles of the documents in the postings list
         String[] titles = new String[post.size()];
         for (int i = 0; i < post.size(); i++) {
-            titles[i] = Index.docNames.get(post.get(i).docID);
+            titles[i] = Path.of(Index.docNames.get(post.get(i).docID)).getFileName().toString();
         }
 
         // perform HITS iterations until convergence
@@ -266,9 +295,20 @@ public class HITSRanker {
         // sort the documents according to their hub and authority scores
         HashMap<Integer, Double> scores = new HashMap<>();
         for (int i = 0; i < post.size(); i++) {
-            var docID = post.get(i).docID;
-            var title = titleToId.get(titles[i]);
-            scores.put(docID, authorities.get(title) + hubs.get(title));
+            var docId = post.get(i).docID;
+            var linkId = titleToId.get(titles[i]);
+
+            var aVal = authorities.get(linkId);
+            if (aVal == null) {
+                aVal = 0.0;
+            }
+
+            var hVal = hubs.get(linkId);
+            if (hVal == null) {
+                hVal = 0.0;
+            }
+
+            scores.put(docId, aVal + hVal);
         }
 
         scores = sortHashMapByValue(scores);
