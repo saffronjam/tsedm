@@ -7,7 +7,10 @@
 
 package ir;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
@@ -108,8 +111,57 @@ public class Query {
      * @param engine        The search engine object
      */
     public void relevanceFeedback(PostingsList results, boolean[] docIsRelevant, Engine engine) {
-        //
-        // YOUR CODE HERE
-        //
+        if (engine.gui.queryType == QueryType.RANKED_QUERY) {
+            var rocchioTerms = new HashMap<String, Double>();
+
+            for (var term : queryterm) {
+                rocchioTerms.put(term.term, rocchioTerms.getOrDefault(term.term, 0.0) + term.weight * alpha);
+            }
+
+            for (int i = 0; i < docIsRelevant.length; i++) {
+                var docId = results.get(i).docID;
+
+                if (docIsRelevant[i]) {
+                    // put doc terms into beta terms
+                    var docTerms = getDocTerms(docId);
+
+                    var tfs = new HashMap<String, Integer>();
+                    for (var term : docTerms) {
+                        tfs.put(term, tfs.getOrDefault(term, 0) + 1);
+                    }
+
+
+                    for (var tf : tfs.entrySet()) {
+                        rocchioTerms.put(tf.getKey(), rocchioTerms.getOrDefault(tf.getKey(), 0.0) + tf.getValue() * beta);
+                    }
+                }
+            }
+
+            queryterm.clear();
+
+            // add beta terms to query
+            for (var entry : rocchioTerms.entrySet()) {
+                queryterm.add(new QueryTerm(entry.getKey(), entry.getValue()));
+            }
+        }
+    }
+
+    private ArrayList<String> getDocTerms(int docId) {
+        var result = new ArrayList<String>();
+
+        var docPath = Index.docNames.get(docId);
+        File f = new File(docPath);
+
+        try (Reader reader = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)) {
+            Tokenizer tok = new Tokenizer(reader, true, false, true, "patterns.txt");
+            while (tok.hasMoreTokens()) {
+                String token = tok.nextToken();
+                result.add(token);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 }

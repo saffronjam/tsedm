@@ -151,6 +151,7 @@ public class Searcher {
     }
 
     private PostingsList phraseQuery(Query query) {
+
         var cache = new HashMap<String, PostingsList>();
 
         if (query.size() == 0) {
@@ -366,6 +367,7 @@ public class Searcher {
 
         for (int i = 0; i < query.size(); i++) {
             var token = query.queryterm.get(i).term;
+            var weight = query.queryterm.get(i).weight;
 
             var cachedList = cache.get(token);
             if (cachedList == null) {
@@ -392,7 +394,7 @@ public class Searcher {
                 // idf = log(N/df)
                 var idf = Math.log((double) index.docNames.size() / cachedList.size());
 
-                var tfIdfScore = tf * idf / normalizationSize;
+                var tfIdfScore = weight * tf * idf / normalizationSize;
 
                 var docNameLookup = index.docNames.get(entry.docID);
                 var docName = Paths.get(docNameLookup).getFileName().toString();
