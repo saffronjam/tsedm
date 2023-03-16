@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a9f21945-1095-4de3-8643-9f0dec4e508a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/.name" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/codeStyles/Project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/id2203_exercises_2_13_1_2_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/inc_compile_2_13.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/kompicsteaching_2_13_1_2_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__ch_qos_logback_logback_classic_0_9_28_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__ch_qos_logback_logback_core_0_9_28_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_barchart_udt_barchart_udt_bundle_2_3_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_google_code_findbugs_jsr305_3_0_2_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_google_errorprone_error_prone_annotations_2_2_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_google_guava_failureaccess_1_0_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_google_guava_guava_27_1_jre_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_google_guava_listenablefuture_9999_0_empty_to_avoid_conflict_with_guava_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_google_j2objc_j2objc_annotations_1_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_michaelpollmeier_scala_arm_2_13_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_typesafe_config_1_3_4_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__com_typesafe_scala_logging_scala_logging_2_13_3_9_5_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__io_netty_netty_all_4_1_42_Final_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_checkerframework_checker_qual_2_5_2_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_codehaus_mojo_animal_sniffer_annotations_1_17_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_javassist_javassist_3_26_0_GA_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_javatuples_javatuples_1_2_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scala_lang_modules_scala_java8_compat_2_13_0_9_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scala_lang_modules_scala_xml_2_13_1_2_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scala_lang_scala_library_2_13_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scala_lang_scala_reflect_2_13_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scalactic_scalactic_2_13_3_1_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scalatest_scalatest_2_13_3_1_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_scalatest_scalatest_compatible_3_1_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_slf4j_slf4j_api_1_7_36_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__org_slf4j_slf4j_simple_1_7_5_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_basic_kompics_component_java_timer_1_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_basic_kompics_component_netty_network_1_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_basic_kompics_port_network_1_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_basic_kompics_port_timer_1_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_kompics_core_1_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_kompics_scala_2_13_2_0_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_kompics_scala_simulator_2_13_2_0_0_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/libraries/sbt__se_sics_kompics_simulator_core_1_2_1_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/modules/id2203-exercises-build.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/modules/id2203-exercises.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/sbt.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/scala_compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../hw4/src/main/scala/se/kth/edx/id2203/templates/Paxos.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../hw4/src/main/scala/se/kth/edx/id2203/templates/Paxos.scala" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="SBT">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="id2203-exercises" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="id2203-exercises" type="f1a62948:ProjectNode" />
+                <item name="id2203-exercises" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="id2203-exercises" type="f1a62948:ProjectNode" />
+                <item name="id2203-exercises" type="2d1252cf:ModuleNode" />
+                <item name="sbt commands" type="5c424813:SbtViewContributor$SbtCommandsGroupNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/se/sics/kompics/kompics-scala_2.13/2.0.0/kompics-scala_2.13-2.0.0-sources.jar!/se/sics/kompics/sl/ScalaComponent.scala" root0="SKIP_INSPECTION" />
+    <setting file="jar://$USER_HOME$/.cache/coursier/v1/https/repo1.maven.org/maven2/se/sics/kompics/kompics-scala_2.13/2.0.0/kompics-scala_2.13-2.0.0-sources.jar!/se/sics/kompics/sl/ScalaPort.scala" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="v0jeprcu" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
+  <component name="ProjectId" id="2LEPMllvXhGUi1cqXg2ZRnfGXSy" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "/home/emil/repos/toydb",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "language.rust",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="run" type="SbtRunConfiguration" factoryName="sbt Task" show_console_on_std_err="false" show_console_on_std_out="false">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="projectPathOnTarget" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="tasks" value="run" />
+      <option name="useSbtShell" value="true" />
+      <option name="vmparams" value="-Xms512M -Xmx1024M -Xss1M -XX:+CMSClassUnloadingEnabled" />
+      <option name="workingDir" value="$PROJECT_DIR$" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="/usr/bin" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a9f21945-1095-4de3-8643-9f0dec4e508a" name="Changes" comment="" />
+      <created>1675433223905</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1675433223905</updated>
+      <workItem from="1675433227506" duration="169000" />
+      <workItem from="1675433406303" duration="76000" />
+      <workItem from="1675433494681" duration="7836000" />
+      <workItem from="1675781917629" duration="835000" />
+      <workItem from="1675931284591" duration="3620000" />
+      <workItem from="1675945514323" duration="114000" />
+      <workItem from="1676464632205" duration="3495000" />
+      <workItem from="1676556543371" duration="23000" />
+      <workItem from="1676559391862" duration="10222000" />
+      <workItem from="1676629201509" duration="3443000" />
+      <workItem from="1677143989568" duration="834000" />
+      <workItem from="1677155507921" duration="320000" />
+      <workItem from="1677155885725" duration="314000" />
+      <workItem from="1677156284055" duration="214000" />
+      <workItem from="1677489835720" duration="16000" />
+      <workItem from="1677490044116" duration="4363000" />
+      <workItem from="1677494422058" duration="3356000" />
+      <workItem from="1677500525244" duration="4000" />
+      <workItem from="1677502411034" duration="18000" />
+      <workItem from="1677502439046" duration="67000" />
+      <workItem from="1677502514544" duration="47000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

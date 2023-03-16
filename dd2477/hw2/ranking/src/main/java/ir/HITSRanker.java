@@ -171,6 +171,7 @@ public class HITSRanker {
         authorities = new HashMap<>();
         hubs = new HashMap<>();
 
+        // create base set
         for (var title : titles) {
             var id = titleToId.get(title);
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ScalaCompilerConfiguration">
-    <profile name="sbt 1" modules="hw2_5620" />
+    <profile name="sbt 1" modules="hw4_6830" />
     <profile name="sbt 2" modules="id2203-exercises">
       <option name="deprecationWarnings" value="true" />
       <option name="featureWarnings" value="true" />

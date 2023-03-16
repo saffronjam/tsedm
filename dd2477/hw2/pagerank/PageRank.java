@@ -62,8 +62,8 @@ public class PageRank {
 
 	boolean isWikipedia;
 
-	final static boolean writeData = true;
-	final static boolean writeResult = true;
+	final static boolean writeData = false;
+	final static boolean writeResult = false;
 
 	final static double[] pagerank30 = new double[30];
 

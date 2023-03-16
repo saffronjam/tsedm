@@ -132,6 +132,11 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
       */
 
       if (promisedBallot < prep.proposalBallot) {
+
+        
+
+        println("accepted new ballot from " + src + " " + prep.proposalBallot);
+
         promisedBallot = prep.proposalBallot
         trigger(PL_Send(src, Promise(promisedBallot, acceptedBallot, acceptedValue)) -> plink)
       } else {
@@ -178,7 +183,7 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
         */
         promises.addOne((prepAck.acceptedBallot, prepAck.acceptedValue))
 
-        if (promises.size == (numProcesses + 1) / 2) {
+        if (promises.size == Math.round((numProcesses + 1.0) / 2.0))  {
           val (maxBallot, value) = promises.maxBy(_._1)
 
           if (value.isDefined) {
@@ -198,7 +203,7 @@ class Paxos(paxosInit: Init[Paxos]) extends ComponentDefinition {
         */
 
         numOfAccepts += 1
-        if (numOfAccepts == (numProcesses + 1) / 2) {
+        if (numOfAccepts == Math.round((numProcesses + 1.0) / 2.0)) {
           println("Proccess " + rank + " decided " + proposedValue);
           trigger(BEB_Broadcast(Decided(proposedValue)) -> beb)
         }
