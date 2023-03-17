@@ -102,13 +102,10 @@ public class Indexer {
                         Index.docNames.put(docID, f.getPath());
                         Index.docLengths.put(docID, offset);
 
-
                         reader.close();
                     } catch (IOException e) {
                         System.err.println("Warning: IOException during indexing.");
                     }
-
-
                 }
             }
         }
@@ -120,8 +117,12 @@ public class Indexer {
      * Indexes one token.
      */
     public void insertIntoIndex(int docID, String token, int offset) {
+
+        // with: 33.6, 40.0
+
         index.insert(token, docID, offset);
-        if (kgIndex != null)
+        if (kgIndex != null) {
             kgIndex.insert(token);
+        }
     }
 }

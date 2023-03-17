@@ -22,9 +22,9 @@ public class Engine {
      */
 
     // Index index = new PersistentScalableHashedIndex();
-    Index index = new PersistentNonScalableHashedIndex();
+    // Index index = new PersistentNonScalableHashedIndex();
     // Index index = new PersistentHashedIndex();
-    // Index index = new HashedIndex();
+    Index index = new HashedIndex();
 
     /**
      * The indexer creating the search index.
@@ -34,7 +34,7 @@ public class Engine {
     /**
      * K-gram index
      */
-    KGramIndex kgIndex;
+    KGramIndex kgIndex = new KGramIndex(2);
 
     /**
      * The searcher used to search the index.
@@ -111,7 +111,6 @@ public class Engine {
                     indexer.processFiles(dokDir, is_indexing);
                 }
 
-
                 // convert tf-vector to tf-idf vector
                 int i = 0;
                 for (var counter : indexer.tokenCounters.values()) {
@@ -169,6 +168,19 @@ public class Engine {
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 gui.displayInfoText(String.format("Indexing done in %.1f seconds.", elapsedTime / 1000.0));
                 index.cleanup();
+
+                var veList = kgIndex.getPostings("ve");
+                var thList = kgIndex.getPostings("th");
+                var heList = kgIndex.getPostings("he");
+
+                var thHeList = kgIndex.intersect(thList, heList);
+
+                System.out.println("ve: " + veList.size());
+
+                System.out.println("th: " + thList.size());
+                System.out.println("he: " + heList.size());
+                System.out.println("th he: " + thHeList.size());
+
             }
         } else {
             gui.displayInfoText("Index is loaded from disk");

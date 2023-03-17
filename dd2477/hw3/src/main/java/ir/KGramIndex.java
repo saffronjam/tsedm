@@ -28,7 +28,6 @@ public class KGramIndex {
      * Index from k-grams to list of term ids that contain the k-gram
      */
     HashMap<String, List<KGramPostingsEntry>> index = new HashMap<>();
-    HashMap<String, HashSet<Integer>> indexSets = new HashMap<>();
 
     /**
      * The ID of the last processed term
@@ -63,7 +62,7 @@ public class KGramIndex {
     /**
      * Get intersection of two postings lists
      */
-    private List<KGramPostingsEntry> intersect(List<KGramPostingsEntry> p1, List<KGramPostingsEntry> p2) {
+    public List<KGramPostingsEntry> intersect(List<KGramPostingsEntry> p1, List<KGramPostingsEntry> p2) {
         var result = new ArrayList<KGramPostingsEntry>();
         int i = 0, j = 0;
         while (i < p1.size() && j < p2.size()) {
@@ -83,27 +82,35 @@ public class KGramIndex {
     }
 
     private int getTermId(String term) {
-        return term2id.computeIfAbsent(term, t -> generateTermID());
+        var termId = generateTermID();
+        term2id.put(term, termId);
+        id2term.put(termId, term);
+        return termId;
     }
+
 
     /**
      * Inserts all k-grams from a token into the index.
      */
     public void insert(String token) {
+
+        if (getIDByTerm(token) != null) {
+            return;
+        }
+
         // insert all k-grams from the token into the index
         var termId = getTermId(token);
 
         for (int i = 0; i < token.length() - getK() + 1; i++) {
             var kgram = token.substring(i, i + getK());
 
-            var added = indexSets.computeIfAbsent(kgram, k -> new HashSet<>()).add(termId);
-            if (added) {
-                index.computeIfAbsent(kgram, k -> new ArrayList<>()).add(new KGramPostingsEntry(termId));
+            var list = index.computeIfAbsent(kgram, k -> new ArrayList<>());
+            if (list.isEmpty() || list.get(list.size() - 1).tokenID != termId) {
+                list.add(new KGramPostingsEntry(termId));
             }
         }
 
-        id2term.put(termId, token);
-        term2id.put(token, termId);
+
     }
 
     /**
