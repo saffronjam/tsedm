@@ -14,7 +14,8 @@
 
 
 // website: protocol://domain
-[A-Za-z0-9.]+:\/\/[A-Za-z0-9.\/\?\+&=_\-,#%:@!]+
+//[A-Za-z0-9.]+:\/\/[A-Za-z0-9.\/\?\+&=_\-,#%:@!]+
+https?:\/\/\S+
 
 // email: someone@domain.com
 [A-Za-z0-9._]+@[A-Za-z0-9.\-]+

@@ -118,22 +118,23 @@ public class Query {
                 rocchioTerms.put(term.term, rocchioTerms.getOrDefault(term.term, 0.0) + term.weight * alpha);
             }
 
-            for (int i = 0; i < docIsRelevant.length; i++) {
+            for (int i = 0; i < Math.min(results.size(), docIsRelevant.length); i++) {
+                if (!docIsRelevant[i]) {
+                    continue;
+                }
+
                 var docId = results.get(i).docID;
 
-                if (docIsRelevant[i]) {
-                    // put doc terms into beta terms
-                    var docTerms = getDocTerms(docId);
+                // put doc terms into beta terms
+                var docTerms = getDocTerms(docId);
 
-                    var tfs = new HashMap<String, Integer>();
-                    for (var term : docTerms) {
-                        tfs.put(term, tfs.getOrDefault(term, 0) + 1);
-                    }
+                var tfs = new HashMap<String, Integer>();
+                for (var term : docTerms) {
+                    tfs.put(term, tfs.getOrDefault(term, 0) + 1);
+                }
 
-
-                    for (var tf : tfs.entrySet()) {
-                        rocchioTerms.put(tf.getKey(), rocchioTerms.getOrDefault(tf.getKey(), 0.0) + tf.getValue() * beta);
-                    }
+                for (var tf : tfs.entrySet()) {
+                    rocchioTerms.put(tf.getKey(), rocchioTerms.getOrDefault(tf.getKey(), 0.0) + tf.getValue() * beta);
                 }
             }
 

@@ -91,6 +91,13 @@ public class Searcher {
         System.out.println("skips: " + skips);
         System.out.println("skip distance: " + skipDistance);
 
+
+        if (list != null) {
+            for (int i = 0; i < Math.min(list.size(), 50); i++) {
+                System.out.println(Path.of(Index.docNames.get(list.get(i).docID)).getFileName().toString() + " " + list.get(i).score);
+            }
+        }
+
         return list;
     }
 
