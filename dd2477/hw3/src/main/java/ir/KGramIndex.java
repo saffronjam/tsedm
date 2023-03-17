@@ -93,6 +93,7 @@ public class KGramIndex {
      * Inserts all k-grams from a token into the index.
      */
     public void insert(String token) {
+        var regexedToken = "^" + token + "$";
 
         if (getIDByTerm(token) != null) {
             return;
@@ -101,16 +102,14 @@ public class KGramIndex {
         // insert all k-grams from the token into the index
         var termId = getTermId(token);
 
-        for (int i = 0; i < token.length() - getK() + 1; i++) {
-            var kgram = token.substring(i, i + getK());
+        for (int i = 0; i < regexedToken.length() - getK() + 1; i++) {
+            var kgram = regexedToken.substring(i, i + getK());
 
             var list = index.computeIfAbsent(kgram, k -> new ArrayList<>());
             if (list.isEmpty() || list.get(list.size() - 1).tokenID != termId) {
                 list.add(new KGramPostingsEntry(termId));
             }
         }
-
-
     }
 
     /**

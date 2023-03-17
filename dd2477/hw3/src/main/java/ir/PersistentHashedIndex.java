@@ -1,7 +1,7 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, KTH, 2018
  */
 
@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 
 /*
  *   Implements an inverted index as a hashtable on disk.
- *   
+ *
  *   Both the words (the dictionary) and the data (the postings list) are
  *   stored in RandomAccessFiles that permit fast (almost constant-time)
- *   disk seeks. 
+ *   disk seeks.
  *
  *   When words are read and indexed, they are first put in an ordinary,
  *   main-memory HashMap. When all words are read, the index is committed
@@ -30,38 +30,58 @@ import java.util.stream.Collectors;
  */
 public abstract class PersistentHashedIndex implements Index {
 
-    /** The directory where the persistent index files are stored. */
+    /**
+     * The directory where the persistent index files are stored.
+     */
     public static final String INDEXDIR = "index/";
 
-    /** The dictionary file name */
+    /**
+     * The dictionary file name
+     */
     public static final String DICTIONARY_FNAME = "dictionary";
 
-    /** The data file name */
+    /**
+     * The data file name
+     */
     public static final String DATA_FNAME = "data";
 
-    /** The terms file name */
+    /**
+     * The terms file name
+     */
     public static final String TERMS_FNAME = "terms";
 
-    /** The doc info file name */
+    /**
+     * The doc info file name
+     */
     public static final String DOCINFO_FNAME = "docInfo";
 
-    /** The dictionary hash table on disk can fit this many entries. */
+    /**
+     * The dictionary hash table on disk can fit this many entries.
+     */
     // davis
     // public static final long TABLESIZE = 611953L;
 
     // guardian
     public static final long TABLESIZE = 3500017L;
 
-    /** The dictionary hash table is stored in this file. */
+    /**
+     * The dictionary hash table is stored in this file.
+     */
     protected RandomAccessFile dictionaryFile;
 
-    /** The data (the PostingsLists) are stored in this file. */
+    /**
+     * The data (the PostingsLists) are stored in this file.
+     */
     protected RandomAccessFile dataFile;
 
-    /** Pointer to the first free memory cell in the data file. */
+    /**
+     * Pointer to the first free memory cell in the data file.
+     */
     protected long free = 0L;
 
-    /** The cache as a main-memory hash map. */
+    /**
+     * The cache as a main-memory hash map.
+     */
     protected HashMap<String, PostingsList> index = new HashMap<String, PostingsList>();
 
     // ===================================================================
@@ -278,9 +298,9 @@ public abstract class PersistentHashedIndex implements Index {
 
     /*
      * Writes an entry to the dictionary hash table file.
-     * 
+     *
      * @param entry The key of this entry is assumed to have a fixed length
-     * 
+     *
      * @param ptr The place in the dictionary file to store the entry
      */
     protected void writeEntry(RandomAccessFile file, Entry entry, long ptr) {
@@ -500,39 +520,6 @@ public abstract class PersistentHashedIndex implements Index {
         return rawData.substring(0, delimIndex);
     }
 
-    protected PostingsList mergePostingsList(PostingsList postingsList1, PostingsList postingsList2) {
-        var merged = new PostingsList(postingsList1.getToken());
-        for (int i = 0; i < postingsList1.size(); i++) {
-            var entry1 = postingsList1.get(i);
-            var entry2 = postingsList2.getByDocId(entry1.docID);
-            if (entry2 == null) {
-                merged.add(entry1);
-                continue;
-            }
-
-            var mergedEntry = mergePostingsEntry(entry1, entry2);
-
-            merged.add(mergedEntry);
-        }
-
-        for (int i = 0; i < postingsList2.size(); i++) {
-            var entry2 = postingsList2.get(i);
-            if (merged.getByDocId(entry2.docID) == null) {
-                merged.add(entry2);
-            }
-        }
-
-        // sort entries to make the intersection algorithm work
-        merged.sortEntriesByDocId();
-        return merged;
-    }
-
-    private PostingsEntry mergePostingsEntry(PostingsEntry postingsEntry1, PostingsEntry postingsEntry2) {
-        var merged = new PostingsEntry(postingsEntry1.docID, postingsEntry1.score);
-        merged.offsets.addAll(postingsEntry1.offsets);
-        merged.offsets.addAll(postingsEntry2.offsets);
-        return merged;
-    }
 
     protected String readFirstLine(RandomAccessFile file) {
         try {

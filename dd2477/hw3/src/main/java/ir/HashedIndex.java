@@ -1,7 +1,7 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   Johan Boye, 2017
  */
 
@@ -14,7 +14,9 @@ import java.util.HashMap;
  */
 public class HashedIndex implements Index {
 
-    /** The index as a hashtable. */
+    /**
+     * The index as a hashtable.
+     */
     private HashMap<String, PostingsList> index = new HashMap<String, PostingsList>();
 
     /**

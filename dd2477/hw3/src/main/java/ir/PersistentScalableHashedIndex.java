@@ -277,7 +277,7 @@ public class PersistentScalableHashedIndex extends PersistentHashedIndex {
 
                     var postingsList1 = parsePostingsList(rawData1);
                     var postingsList2 = parsePostingsList(rawData2);
-                    var postingsListMerged = mergePostingsList(postingsList1, postingsList2);
+                    var postingsListMerged = PostingsList.merge(postingsList1, postingsList2);
 
                     var rawData = marshallPostingsList(postingsListMerged);
                     var bytesWritten = writeData(dataOut, rawData, outPtr);

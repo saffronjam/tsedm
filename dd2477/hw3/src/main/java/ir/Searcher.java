@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -91,13 +92,6 @@ public class Searcher {
         System.out.println("skips: " + skips);
         System.out.println("skip distance: " + skipDistance);
 
-
-        if (list != null) {
-            for (int i = 0; i < Math.min(list.size(), 50); i++) {
-                System.out.println(Path.of(Index.docNames.get(list.get(i).docID)).getFileName().toString() + " " + list.get(i).score);
-            }
-        }
-
         return list;
     }
 
@@ -114,7 +108,7 @@ public class Searcher {
         var initialTerm = query.queryterm.get(0).term;
 
         var parsingStart = System.currentTimeMillis();
-        var totalAnswer = index.getPostings(initialTerm);
+        var totalAnswer = getPostings(initialTerm);
         var parsingEnd = System.currentTimeMillis();
         parsing += (parsingEnd - parsingStart);
 
@@ -126,7 +120,7 @@ public class Searcher {
             var cachedList = cache.get(token);
             if (cachedList == null) {
                 parsingStart = System.currentTimeMillis();
-                cachedList = index.getPostings(token);
+                cachedList = getPostings(token);
                 parsingEnd = System.currentTimeMillis();
                 parsing += (parsingEnd - parsingStart);
 
@@ -431,5 +425,60 @@ public class Searcher {
                         + " ms without parsing)");
 
         return answer;
+    }
+
+    private PostingsList getPostings(String term) {
+        // no wildcard
+        if (!term.contains("*")) {
+            return index.getPostings(term);
+        }
+
+        // split on wildcard and get kgram
+        var wildcardSplits = term.split("\\*");
+
+        // create kgrams
+
+        var kgrams = new ArrayList<String>();
+
+        for (var wildcardSplit : wildcardSplits) {
+
+            wildcardSplit = "^" + wildcardSplit + "$";
+
+            for (int i = 0; i < wildcardSplit.length() - kgIndex.getK() + 1; i++) {
+                var kgram = wildcardSplit.substring(i, i + kgIndex.getK());
+                kgrams.add(kgram);
+            }
+        }
+
+        // get postings for each kgram
+        var matchWith = "^" + term.replace("*", ".*") + "$";
+        var validWords = new HashSet<String>();
+        for (var kgram : kgrams) {
+            var list = kgIndex.getPostings(kgram);
+            if (list == null) {
+                continue;
+            }
+
+            for (var kgramEntry : list) {
+                var kgramWord = kgIndex.getTermByID(kgramEntry.tokenID);
+                if (kgramWord.matches(matchWith)) {
+                    validWords.add(kgramWord);
+                }
+            }
+        }
+
+        // get postings for each word
+        var postings = new PostingsList(term);
+        for (var word : validWords) {
+            var other = index.getPostings(word);
+            if (other == null) {
+                continue;
+            }
+
+            // merge postings
+            postings = PostingsList.merge(postings, other);
+        }
+
+        return postings;
     }
 }

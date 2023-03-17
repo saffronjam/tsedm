@@ -101,4 +101,46 @@ public class PostingsList {
     public void sortEntriesByScore() {
         list.sort(PostingsEntry::compareTo);
     }
+
+    public static PostingsList merge(PostingsList postingsList1, PostingsList postingsList2) {
+        var mergedList = new PostingsList(postingsList1.getToken());
+        var i = 0;
+        var j = 0;
+
+        while (i < postingsList1.size() && j < postingsList2.size()) {
+            var entry1 = postingsList1.get(i);
+            var entry2 = postingsList2.get(j);
+
+            if (entry1.docID == entry2.docID) {
+                // if docIds are equal, merge the entries
+                var mergedEntry = new PostingsEntry(entry1.docID, entry1.score + entry2.score);
+                mergedEntry.offsets.addAll(entry1.offsets);
+                mergedEntry.offsets.addAll(entry2.offsets);
+                mergedList.add(mergedEntry);
+                i++;
+                j++;
+            } else if (entry1.docID < entry2.docID) {
+                // if docId of entry1 is smaller, add it to the merged list
+                mergedList.add(entry1);
+                i++;
+            } else {
+                // if docId of entry2 is smaller, add it to the merged list
+                mergedList.add(entry2);
+                j++;
+            }
+        }
+
+        // add the remaining entries
+        while (i < postingsList1.size()) {
+            mergedList.add(postingsList1.get(i));
+            i++;
+        }
+
+        while (j < postingsList2.size()) {
+            mergedList.add(postingsList2.get(j));
+            j++;
+        }
+
+        return mergedList;
+    }
 }
