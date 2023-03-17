@@ -113,9 +113,7 @@ public class PostingsList {
 
             if (entry1.docID == entry2.docID) {
                 // if docIds are equal, merge the entries
-                var mergedEntry = new PostingsEntry(entry1.docID, entry1.score + entry2.score);
-                mergedEntry.offsets.addAll(entry1.offsets);
-                mergedEntry.offsets.addAll(entry2.offsets);
+                var mergedEntry = PostingsEntry.merge(entry1, entry2);
                 mergedList.add(mergedEntry);
                 i++;
                 j++;

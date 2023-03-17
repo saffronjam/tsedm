@@ -34,4 +34,38 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
 
     public ArrayList<Integer> offsets = new ArrayList<>();
 
+
+
+
+    public static PostingsEntry merge(PostingsEntry postingsEntry1, PostingsEntry postingsEntry2) {
+        var merged = new PostingsEntry(postingsEntry1.docID, postingsEntry1.score + postingsEntry2.score);
+
+        if (postingsEntry1.offsets.size() == 0) {
+            return postingsEntry2;
+        }
+        if (postingsEntry2.offsets.size() == 0) {
+            return postingsEntry1;
+        }
+        int i = 0;
+        int j = 0;
+        while (i < postingsEntry1.offsets.size() && j < postingsEntry2.offsets.size()) {
+            if (postingsEntry1.offsets.get(i) < postingsEntry2.offsets.get(j)) {
+                merged.offsets.add(postingsEntry1.offsets.get(i));
+                i++;
+            } else {
+                merged.offsets.add(postingsEntry2.offsets.get(j));
+                j++;
+            }
+        }
+        while (i < postingsEntry1.offsets.size()) {
+            merged.offsets.add(postingsEntry1.offsets.get(i));
+            i++;
+        }
+        while (j < postingsEntry2.offsets.size()) {
+            merged.offsets.add(postingsEntry2.offsets.get(j));
+            j++;
+        }
+        return merged;
+    }
+
 }

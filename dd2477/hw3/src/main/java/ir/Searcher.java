@@ -165,7 +165,7 @@ public class Searcher {
         var intialTerm = query.queryterm.get(0).term;
 
         var parsingStart = System.currentTimeMillis();
-        var totalAnswer = index.getPostings(intialTerm);
+        var totalAnswer = getPostings(intialTerm);
         var parsingEnd = System.currentTimeMillis();
         parsing += (parsingEnd - parsingStart);
 
@@ -177,7 +177,7 @@ public class Searcher {
             var cachedList = cache.get(token);
             if (cachedList == null) {
                 parsingStart = System.currentTimeMillis();
-                cachedList = index.getPostings(token);
+                cachedList = getPostings(token);
                 parsingEnd = System.currentTimeMillis();
                 parsing += (parsingEnd - parsingStart);
 
@@ -470,15 +470,10 @@ public class Searcher {
         // get postings for each word
         var postings = new PostingsList(term);
         for (var word : validWords) {
-            var other = index.getPostings(word);
-            if (other == null) {
-                continue;
-            }
-
             // merge postings
-            postings = PostingsList.merge(postings, other);
+            postings = PostingsList.merge(postings, index.getPostings(word));
         }
-
+//7020, offset 114
         return postings;
     }
 }
