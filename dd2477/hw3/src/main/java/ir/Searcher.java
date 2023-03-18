@@ -467,13 +467,18 @@ public class Searcher {
             }
         }
 
+        var now = System.currentTimeMillis();
+
         // get postings for each word
         var postings = new PostingsList(term);
         for (var word : validWords) {
             // merge postings
-            postings = PostingsList.merge(postings, index.getPostings(word));
+            postings.mergeWith(index.getPostings(word));
         }
-//7020, offset 114
+
+        var end = System.currentTimeMillis();
+        System.out.println("wildcard (" + term + ") merging took: " + (end - now) + " ms");
+
         return postings;
     }
 }

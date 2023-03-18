@@ -22,7 +22,7 @@ public class Engine {
      */
 
     // Index index = new PersistentScalableHashedIndex();
-    // Index index = new PersistentNonScalableHashedIndex();
+//     Index index = new PersistentNonScalableHashedIndex();
     // Index index = new PersistentHashedIndex();
     Index index = new HashedIndex();
 
@@ -162,12 +162,13 @@ public class Engine {
                     Index.docLengthsEuclidean.put(docId, result);
                 }
 
-                // save euclidean lengths to disk
-                writeEuclideanData();
 
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 gui.displayInfoText(String.format("Indexing done in %.1f seconds.", elapsedTime / 1000.0));
                 index.cleanup();
+
+                // save euclidean lengths to disk
+                writeEuclideanData();
 
                 var veList = kgIndex.getPostings("ve");
                 var thList = kgIndex.getPostings("th");
@@ -187,6 +188,7 @@ public class Engine {
 
             // load euclidean length from disk
             parseEuclideanData();
+            System.out.println("Loaded euclidean distances from disk");
         }
     }
 

@@ -102,6 +102,38 @@ public class PostingsList {
         list.sort(PostingsEntry::compareTo);
     }
 
+    public void mergeWith(PostingsList postingsList) {
+        var i = 0;
+        var j = 0;
+
+        while (i < list.size() && j < postingsList.size()) {
+            var entry1 = list.get(i);
+            var entry2 = postingsList.get(j);
+
+            if (entry1.docID == entry2.docID) {
+                // if docIds are equal, merge the entries
+                var mergedEntry = PostingsEntry.merge(entry1, entry2);
+                list.set(i, mergedEntry);
+                i++;
+                j++;
+            } else if (entry1.docID < entry2.docID) {
+                i++;
+            } else {
+                // if docId of entry2 is smaller, add it to the merged list
+                list.add(i, entry2);
+                map.put(entry2.docID, entry2);
+                i++;
+                j++;
+            }
+        }
+
+        // add the remaining entries
+        while (j < postingsList.size()) {
+            list.add(postingsList.get(j));
+            j++;
+        }
+    }
+
     public static PostingsList merge(PostingsList postingsList1, PostingsList postingsList2) {
         var mergedList = new PostingsList(postingsList1.getToken());
         var i = 0;
