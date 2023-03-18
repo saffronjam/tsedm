@@ -12,10 +12,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 /**
  * Searches an index for results of a query.
@@ -406,7 +403,8 @@ public class Searcher {
     private PostingsList getPostings(String term, RankingType rankingType, NormalizationType normalizationType, double weight) {
         // no wildcard
         if (!term.contains("*")) {
-            return index.getPostings(term);
+            var list = mergePostingsLists(term, new ArrayList<>(List.of(term)), rankingType, normalizationType, weight);
+            return list;
         }
 
         // split on wildcard and get kgram
