@@ -343,7 +343,7 @@ public class Searcher {
                 var postingsList = cache.get(token);
                 if (postingsList == null) {
                     var parsingStart = System.currentTimeMillis();
-                    postingsList = index.getPostings(token);
+                    postingsList = getPostings(token);
                     var parsingEnd = System.currentTimeMillis();
                     parsing += (parsingEnd - parsingStart);
 
@@ -373,7 +373,7 @@ public class Searcher {
             var cachedList = cache.get(token);
             if (cachedList == null) {
                 var parsingStart = System.currentTimeMillis();
-                cachedList = index.getPostings(token);
+                cachedList = getPostings(token, rankingType, normalizationType, weight);
                 var parsingEnd = System.currentTimeMillis();
                 parsing += (parsingEnd - parsingStart);
 
@@ -384,34 +384,6 @@ public class Searcher {
 
             for (int j = 0; j < cachedList.size(); j++) {
                 var entry = cachedList.get(j);
-
-                var tf = cachedList.get(j).offsets.size();
-
-                var normalizationSize =
-                        normalizationType == NormalizationType.NUMBER_OF_WORDS ?
-                                Index.docLengths.get(entry.docID) :
-                                Index.docLengthsEuclidean.get(entry.docID);
-
-                // idf = log(N/df)
-                var idf = Math.log((double) index.docNames.size() / cachedList.size());
-
-                var tfIdfScore = weight * tf * idf / normalizationSize;
-
-                var docNameLookup = index.docNames.get(entry.docID);
-                var docName = Paths.get(docNameLookup).getFileName().toString();
-
-                var pagerankScore = pagerank.getOrDefault(docName, 0.0);
-
-                var c = 0.01;
-                var combined = c * tfIdfScore + (1 - c) * pagerankScore;
-
-                entry.score = switch (rankingType) {
-                    case TF_IDF -> tfIdfScore;
-                    case PAGERANK -> pagerankScore;
-                    case HITS -> 0.0;
-                    case COMBINATION -> combined;
-                };
-
                 answer.add(entry.docID, entry.score, entry.offsets);
             }
         }
@@ -428,6 +400,10 @@ public class Searcher {
     }
 
     private PostingsList getPostings(String term) {
+        return getPostings(term, RankingType.TF_IDF, NormalizationType.NUMBER_OF_WORDS, 1.0);
+    }
+
+    private PostingsList getPostings(String term, RankingType rankingType, NormalizationType normalizationType, double weight) {
         // no wildcard
         if (!term.contains("*")) {
             return index.getPostings(term);
@@ -470,15 +446,54 @@ public class Searcher {
         var now = System.currentTimeMillis();
 
         // get postings for each word
-        var postings = new PostingsList(term);
-        for (var word : validWords) {
-            // merge postings
-            postings.mergeWith(index.getPostings(word));
-        }
+        var postings = mergePostingsLists(term, new ArrayList<>(validWords), rankingType, normalizationType, weight);
 
         var end = System.currentTimeMillis();
         System.out.println("wildcard (" + term + ") merging took: " + (end - now) + " ms");
 
         return postings;
+    }
+
+    private PostingsList mergePostingsLists(String term, ArrayList<String> words, RankingType rankingType, NormalizationType normalizationType, double weight) {
+        var postingsLists = new PostingsList(term);
+
+        for (var word : words) {
+            var list = index.getPostings(word);
+
+            for (int i = 0; i < list.size(); i++) {
+                var entry = list.get(i);
+
+                var tf = entry.offsets.size();
+
+                var normalizationSize =
+                        normalizationType == NormalizationType.NUMBER_OF_WORDS ?
+                                Index.docLengths.get(entry.docID) :
+                                Index.docLengthsEuclidean.get(entry.docID);
+
+                // idf = log(N/df)
+                var idf = Math.log((double) index.docNames.size() / list.size());
+
+                var tfIdfScore = weight * tf * idf / normalizationSize;
+
+                var docNameLookup = index.docNames.get(entry.docID);
+                var docName = Paths.get(docNameLookup).getFileName().toString();
+
+                var pagerankScore = pagerank.getOrDefault(docName, 0.0);
+
+                var c = 0.01;
+                var combined = c * tfIdfScore + (1 - c) * pagerankScore;
+
+                entry.score = switch (rankingType) {
+                    case TF_IDF -> tfIdfScore;
+                    case PAGERANK -> pagerankScore;
+                    case HITS -> 0.0;
+                    case COMBINATION -> combined;
+                };
+            }
+
+            postingsLists.mergeWith(list);
+        }
+
+        return postingsLists;
     }
 }

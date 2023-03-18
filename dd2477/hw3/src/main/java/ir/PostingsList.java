@@ -114,6 +114,7 @@ public class PostingsList {
                 // if docIds are equal, merge the entries
                 var mergedEntry = PostingsEntry.merge(entry1, entry2);
                 list.set(i, mergedEntry);
+                map.put(mergedEntry.docID, mergedEntry);
                 i++;
                 j++;
             } else if (entry1.docID < entry2.docID) {
@@ -129,7 +130,9 @@ public class PostingsList {
 
         // add the remaining entries
         while (j < postingsList.size()) {
-            list.add(postingsList.get(j));
+            var entry = postingsList.get(j);
+            list.add(entry);
+            map.put(entry.docID, entry);
             j++;
         }
     }

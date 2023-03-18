@@ -37,32 +37,32 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
 
 
 
-    public static PostingsEntry merge(PostingsEntry postingsEntry1, PostingsEntry postingsEntry2) {
-        var merged = new PostingsEntry(postingsEntry1.docID, postingsEntry1.score + postingsEntry2.score);
+    public static PostingsEntry merge(PostingsEntry p1, PostingsEntry p2) {
+        var merged = new PostingsEntry(p1.docID, p1.score + p2.score);
 
-        if (postingsEntry1.offsets.size() == 0) {
-            return postingsEntry2;
+        if (p1.offsets.size() == 0) {
+            return p2;
         }
-        if (postingsEntry2.offsets.size() == 0) {
-            return postingsEntry1;
+        if (p2.offsets.size() == 0) {
+            return p1;
         }
         int i = 0;
         int j = 0;
-        while (i < postingsEntry1.offsets.size() && j < postingsEntry2.offsets.size()) {
-            if (postingsEntry1.offsets.get(i) < postingsEntry2.offsets.get(j)) {
-                merged.offsets.add(postingsEntry1.offsets.get(i));
+        while (i < p1.offsets.size() && j < p2.offsets.size()) {
+            if (p1.offsets.get(i) < p2.offsets.get(j)) {
+                merged.offsets.add(p1.offsets.get(i));
                 i++;
             } else {
-                merged.offsets.add(postingsEntry2.offsets.get(j));
+                merged.offsets.add(p2.offsets.get(j));
                 j++;
             }
         }
-        while (i < postingsEntry1.offsets.size()) {
-            merged.offsets.add(postingsEntry1.offsets.get(i));
+        while (i < p1.offsets.size()) {
+            merged.offsets.add(p1.offsets.get(i));
             i++;
         }
-        while (j < postingsEntry2.offsets.size()) {
-            merged.offsets.add(postingsEntry2.offsets.get(j));
+        while (j < p2.offsets.size()) {
+            merged.offsets.add(p2.offsets.get(j));
             j++;
         }
         return merged;
