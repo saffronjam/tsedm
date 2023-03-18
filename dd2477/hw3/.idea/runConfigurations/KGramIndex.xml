@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="KGramIndex" type="Application" factoryName="Application" nameIsGenerated="true">
+    <option name="MAIN_CLASS_NAME" value="ir.KGramIndex" />
+    <module name="hw3" />
+    <option name="PROGRAM_PARAMETERS" value="-f kgram_test.txt -p patterns.txt -k 2 -kg &quot;ve&quot;" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="ir.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
