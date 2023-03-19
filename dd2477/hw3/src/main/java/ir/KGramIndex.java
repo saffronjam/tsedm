@@ -209,4 +209,14 @@ public class KGramIndex {
             }
         }
     }
+
+    public ArrayList<String> getKGrams(String term) {
+        var regexedToken = "^" + term + "$";
+        var kgrams = new ArrayList<String>();
+        for (int i = 0; i < regexedToken.length() - getK() + 1; i++) {
+            var kgram = regexedToken.substring(i, i + getK());
+            kgrams.add(kgram);
+        }
+        return kgrams;
+    }
 }

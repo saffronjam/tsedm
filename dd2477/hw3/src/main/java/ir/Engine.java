@@ -94,6 +94,7 @@ public class Engine {
         decodeArgs(args);
         indexer = new Indexer(index, kgIndex, patterns_file);
         searcher = new Searcher(index, kgIndex);
+        speller = new SpellChecker(index, kgIndex);
         gui = new SearchGUI(this);
         gui.init();
         /*

@@ -194,7 +194,7 @@ public class SearchGUI extends JFrame {
                 //
                 // We don't want to show all results directly since the displaying itself
                 // might take a long time, if there are many results.
-                if (results != null) {
+                if (results != null && results.size() > 0) {
                     displayResults(MAX_RESULTS, elapsedTime / 1000.0);
                 } else {
                     displayInfoText("Found 0 matching document(s)");
