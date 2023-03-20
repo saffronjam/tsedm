@@ -74,8 +74,7 @@ public class SpellChecker {
      * of the two sets contains <code>intersection</code> elements.
      */
     private double jaccard(int szA, int szB, int intersection) {
-        var nonIntersection = szA + szB - intersection * 2;
-        return (double) intersection / (double) nonIntersection;
+        return (double) intersection / (double) (szA + szB - intersection);
     }
 
     /**
@@ -137,18 +136,22 @@ public class SpellChecker {
                 intersection.retainAll(termKgrams);
 
                 var score = jaccard(kgrams.size(), termKgrams.size(), intersection.size());
-                if (score > JACCARD_THRESHOLD) {
-                    maybeMatch.add(new KGramStat(term, score));
+                if (score < JACCARD_THRESHOLD) {
+                    continue;
                 }
+
+                maybeMatch.add(new KGramStat(term, score));
             }
         }
 
         var finalMatch = new ArrayList<KGramStat>();
         for (var match : maybeMatch) {
             var editDistance = editDistance(queryTerm.term, match.token);
-            if (editDistance <= MAX_EDIT_DISTANCE) {
-                finalMatch.add(new KGramStat(match.token, match.score));
+            if (editDistance > MAX_EDIT_DISTANCE) {
+                continue;
             }
+
+            finalMatch.add(new KGramStat(match.token, match.score));
         }
 
         finalMatch.sort((o1, o2) -> Double.compare(o2.score, o1.score));
